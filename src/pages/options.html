@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LexiJap Settings</title>
+    <title>LexiEng Settings</title>
     <link rel="stylesheet" href="../styles/base.css" />
     <link rel="stylesheet" href="../styles/options.css" />
   </head>
   <body>
     <header class="topbar">
-      <a class="wordmark" href="#overview" aria-label="LexiJap settings home">
+      <a class="wordmark" href="#overview" aria-label="LexiEng settings home">
         <span class="brand-mark" aria-hidden="true">Lx</span>
-        <span><strong>LexiJap</strong><small>English Reader</small></span>
+        <span><strong>LexiEng</strong><small>English Reader</small></span>
       </a>
       <div id="global-status" class="global-status" role="status">Everything is stored locally</div>
     </header>
@@ -29,7 +29,7 @@
         <section id="overview" class="settings-section hero-section">
           <span class="eyebrow">Local-first immersion</span>
           <h1>Read the web at your level.</h1>
-          <p class="lead">LexiJap combines your own Yomitan dictionaries, your <strong>English Mining</strong> deck, and a frequency floor so the words you already know stay out of the way.</p>
+          <p class="lead">LexiEng combines your own Yomitan dictionaries, your <strong>English Mining</strong> deck, and a frequency floor so the words you already know stay out of the way. Point at any word and press <kbd>Q</kbd> for its dictionary and Anki review state.</p>
           <div class="summary-grid">
             <article><strong id="dictionary-count">0</strong><span>dictionaries</span></article>
             <article><strong id="definition-count">0</strong><span>definitions</span></article>
@@ -64,7 +64,7 @@
         <section id="anki" class="settings-section">
           <span class="eyebrow">Known-word source</span>
           <h2>Anki knowledge</h2>
-          <p>With Anki open and AnkiConnect installed, LexiJap reads the word field from every note in your mining deck. It never changes or deletes Anki cards.</p>
+          <p>With Anki open and AnkiConnect installed, LexiEng reads headwords and card schedules from your mining deck. It changes a card’s schedule only when you deliberately choose Again, Hard, Good, or Easy in a lookup popup; it never edits or deletes notes.</p>
 
           <div class="form-grid">
             <label>
@@ -85,7 +85,7 @@
           </div>
           <div class="button-row">
             <button id="test-anki" class="secondary-button" type="button">Test connection</button>
-            <button id="sync-anki" class="primary-button" type="button">Sync English Mining</button>
+            <button id="sync-anki" class="primary-button" type="button">Sync words + schedules</button>
           </div>
           <div id="anki-status" class="inline-status" role="status">Not synced yet</div>
         </section>

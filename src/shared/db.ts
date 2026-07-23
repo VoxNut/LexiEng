@@ -1,4 +1,5 @@
 import {
+  AnkiCardSnapshot,
   DictionaryRecord,
   KnownWordRecord,
   LookupEntry,
@@ -11,14 +12,16 @@ import {
 } from './types';
 import { normalizeTerm } from './util';
 
+// Keep the legacy database name so existing users retain imported dictionaries after the rename.
 const DATABASE_NAME = 'lexijap';
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 const STORES = {
   dictionaries: 'dictionaries',
   terms: 'terms',
   metadata: 'metadata',
   knownWords: 'knownWords',
+  ankiCards: 'ankiCards',
 } as const;
 
 let databasePromise: Promise<IDBDatabase> | undefined;
@@ -26,7 +29,7 @@ let databasePromise: Promise<IDBDatabase> | undefined;
 export function openDatabase(): Promise<IDBDatabase> {
   databasePromise ??= new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    request.onerror = () => reject(request.error ?? new Error('Could not open LexiJap storage'));
+    request.onerror = () => reject(request.error ?? new Error('Could not open LexiEng storage'));
     request.onupgradeneeded = () => {
       const database = request.result;
       if (!database.objectStoreNames.contains(STORES.dictionaries)) {
@@ -49,6 +52,11 @@ export function openDatabase(): Promise<IDBDatabase> {
       if (!database.objectStoreNames.contains(STORES.knownWords)) {
         const known = database.createObjectStore(STORES.knownWords, { keyPath: 'normalized' });
         known.createIndex('sources', 'sources', { multiEntry: true });
+      }
+      if (!database.objectStoreNames.contains(STORES.ankiCards)) {
+        const cards = database.createObjectStore(STORES.ankiCards, { keyPath: 'cardId' });
+        cards.createIndex('normalized', 'normalized');
+        cards.createIndex('noteId', 'noteId');
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -136,27 +144,31 @@ export async function getStorageStats(): Promise<{
   terms: number;
   metadata: number;
   knownAnki: number;
+  ankiCards: number;
 }> {
   const database = await openDatabase();
   const transaction = database.transaction(Object.values(STORES), 'readonly');
-  const [dictionaries, terms, metadata, knownAnki] = await Promise.all([
+  const [dictionaries, terms, metadata, knownAnki, ankiCards] = await Promise.all([
     requestResult<number>(transaction.objectStore(STORES.dictionaries).count()),
     requestResult<number>(transaction.objectStore(STORES.terms).count()),
     requestResult<number>(transaction.objectStore(STORES.metadata).count()),
     requestResult<number>(transaction.objectStore(STORES.knownWords).index('sources').count('anki')),
+    requestResult<number>(transaction.objectStore(STORES.ankiCards).count()),
   ]);
   await transactionDone(transaction);
-  return { dictionaries, terms, metadata, knownAnki };
+  return { dictionaries, terms, metadata, knownAnki, ankiCards };
 }
 
-export async function replaceAnkiKnownWords(
+export async function replaceAnkiSnapshot(
   entries: Array<{ normalized: string; surface: string }>,
+  cards: AnkiCardSnapshot[],
 ): Promise<number> {
   const database = await openDatabase();
-  const removalTransaction = database.transaction(STORES.knownWords, 'readwrite', {
+  const removalTransaction = database.transaction([STORES.knownWords, STORES.ankiCards], 'readwrite', {
     durability: 'relaxed',
   });
   const removalStore = removalTransaction.objectStore(STORES.knownWords);
+  removalTransaction.objectStore(STORES.ankiCards).clear();
 
   await new Promise<void>((resolve, reject) => {
     const cursorRequest = removalStore.openCursor();
@@ -180,7 +192,7 @@ export async function replaceAnkiKnownWords(
 
   const now = Date.now();
   const unique = new Map(entries.filter((entry) => entry.normalized).map((entry) => [entry.normalized, entry]));
-  const insertionTransaction = database.transaction(STORES.knownWords, 'readwrite', {
+  const insertionTransaction = database.transaction([STORES.knownWords, STORES.ankiCards], 'readwrite', {
     durability: 'relaxed',
   });
   const insertionStore = insertionTransaction.objectStore(STORES.knownWords);
@@ -198,9 +210,26 @@ export async function replaceAnkiKnownWords(
       } satisfies KnownWordRecord);
     };
   }
+  const cardStore = insertionTransaction.objectStore(STORES.ankiCards);
+  for (const card of cards) cardStore.put(card);
 
   await transactionDone(insertionTransaction);
   return unique.size;
+}
+
+export async function updateAnkiCard(snapshot: AnkiCardSnapshot): Promise<AnkiCardSnapshot> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.ankiCards, 'readwrite');
+  const store = transaction.objectStore(STORES.ankiCards);
+  const current = await requestResult<AnkiCardSnapshot | undefined>(store.get(snapshot.cardId));
+  const updated = {
+    ...snapshot,
+    normalized: snapshot.normalized || current?.normalized || '',
+    surface: snapshot.surface || current?.surface || '',
+  };
+  store.put(updated);
+  await transactionDone(transaction);
+  return updated;
 }
 
 export async function setManualKnown(term: string, known: boolean): Promise<void> {
@@ -267,15 +296,20 @@ export async function lookupTerm(
   );
   const enabled = new Set(enabledDictionaries.map(({ id }) => id));
   const dictionaryMap = new Map(enabledDictionaries.map((dictionary) => [dictionary.id, dictionary]));
-  const transaction = database.transaction([STORES.knownWords, STORES.terms, STORES.metadata], 'readonly');
+  const transaction = database.transaction(
+    [STORES.knownWords, STORES.terms, STORES.metadata, STORES.ankiCards],
+    'readonly',
+  );
   const knownStore = transaction.objectStore(STORES.knownWords);
   const termIndex = transaction.objectStore(STORES.terms).index('lookupKeys');
   const metaIndex = transaction.objectStore(STORES.metadata).index('lookupKeys');
+  const ankiIndex = transaction.objectStore(STORES.ankiCards).index('normalized');
 
-  const [known, terms, metadata] = await Promise.all([
+  const [known, terms, metadata, ankiCards] = await Promise.all([
     firstKnownRecord(candidates, knownStore),
     getAllUnique<TermRecord>(candidates, termIndex),
     getAllUnique<MetaRecord>(candidates, metaIndex),
+    getAllUnique<AnkiCardSnapshot>(candidates, ankiIndex, (entry) => entry.cardId),
   ]);
   await transactionDone(transaction);
 
@@ -303,6 +337,7 @@ export async function lookupTerm(
     frequencyRank,
     knownSources: known?.sources ?? [],
     knownByFrequency: frequencyRank !== undefined && frequencyRank <= settings.knownFrequencyCeiling,
+    ankiCards: ankiCards.sort((a, b) => a.cardId - b.cardId),
     ipa,
     entries,
   };
@@ -403,16 +438,17 @@ async function firstKnownRecord(
   return (await Promise.all(requests)).find(Boolean);
 }
 
-async function getAllUnique<T extends { id?: number }>(
+async function getAllUnique<T extends object>(
   candidates: string[],
   index: IDBIndex,
+  getKey?: (entry: T) => number | string,
 ): Promise<T[]> {
   const groups = await Promise.all(
     candidates.map((candidate) => requestResult<T[]>(index.getAll(IDBKeyRange.only(candidate)))),
   );
   const unique = new Map<number | string, T>();
   for (const entry of groups.flat()) {
-    unique.set(entry.id ?? JSON.stringify(entry), entry);
+    unique.set(getKey?.(entry) ?? (entry as { id?: number }).id ?? JSON.stringify(entry), entry);
   }
   return [...unique.values()];
 }

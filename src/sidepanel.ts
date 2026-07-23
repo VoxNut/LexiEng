@@ -1,6 +1,6 @@
 import { renderLookupResult } from './shared/renderer';
 import { applyTheme, getSettings } from './shared/settings';
-import { LookupResult, RuntimeRequest, ScanStats } from './shared/types';
+import { AnkiEase, LookupResult, RuntimeRequest, ScanStats } from './shared/types';
 import { asErrorMessage, formatNumber } from './shared/util';
 
 const scanButton = requiredButton('scan-page');
@@ -78,10 +78,16 @@ async function lookup(query: string): Promise<void> {
       result,
       (nested) => void lookup(nested),
       (known) => void setKnown(result.query, known),
+      (cardId, ease) => reviewCard(cardId, ease, result.query),
     );
   } catch (error) {
     results.replaceChildren(textElement('div', asErrorMessage(error), 'lookup-error'));
   }
+}
+
+async function reviewCard(cardId: number, ease: AnkiEase, term: string): Promise<void> {
+  await sendMessage({ type: 'reviewAnkiCard', cardId, ease });
+  await lookup(term);
 }
 
 async function setKnown(term: string, known: boolean): Promise<void> {

@@ -1,4 +1,4 @@
-import init, { YomitanArchive } from '../.generated/wasm/lexijap_core.js';
+import init, { YomitanArchive } from '../.generated/wasm/lexieng_core.js';
 
 interface ImportMessage {
   type: 'import';
@@ -36,7 +36,7 @@ async function importArchive(message: ImportMessage): Promise<void> {
   let archive: YomitanArchive | undefined;
   try {
     wasmReady ??= init({
-      module_or_path: new URL('./wasm/lexijap_core_bg.wasm', worker.location.href),
+      module_or_path: new URL('./wasm/lexieng_core_bg.wasm', worker.location.href),
     });
     await wasmReady;
     archive = new YomitanArchive(new Uint8Array(message.bytes));

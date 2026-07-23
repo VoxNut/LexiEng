@@ -1,16 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "LexiJap — English Reader",
-  "short_name": "LexiJap",
-  "version": "0.1.0",
-  "description": "Local-first English immersion reading with Yomitan dictionaries, frequency filtering, and Anki knowledge sync.",
+  "name": "LexiEng — English Reader",
+  "short_name": "LexiEng",
+  "version": "0.2.0",
+  "description": "Local English dictionary popups, frequency filtering, and Anki scheduler reviews for immersion reading.",
   "minimum_chrome_version": "116",
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "action": {
-    "default_title": "Open LexiJap",
+    "default_title": "Open LexiEng",
     "default_icon": {
       "16": "assets/icon-16.png",
       "32": "assets/icon-32.png"
@@ -34,7 +34,7 @@
       "suggested_key": {
         "default": "Alt+Shift+L"
       },
-      "description": "Scan or clear the current page"
+      "description": "Scan the current page for target words"
     }
   },
   "permissions": [

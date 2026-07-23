@@ -1,11 +1,11 @@
 [workspace]
-members = ["crates/lexijap-core"]
+members = ["crates/lexieng-core"]
 resolver = "2"
 
 [workspace.package]
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/VoxNut/lexijap"
+repository = "https://github.com/VoxNut/LexiEng"
 rust-version = "1.85"
 
 [profile.release]

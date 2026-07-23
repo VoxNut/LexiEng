@@ -10,7 +10,7 @@ execFileSync('node', [path.join(root, 'scripts', 'build.mjs')], { cwd: root, std
 const version = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
 const packages = path.join(root, 'packages');
 await mkdir(packages, { recursive: true });
-const outputPath = path.join(packages, `lexijap-v${version}-chromium.zip`);
+const outputPath = path.join(packages, `lexieng-v${version}-chromium.zip`);
 
 await new Promise((resolve, reject) => {
   const output = createWriteStream(outputPath);

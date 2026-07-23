@@ -75,6 +75,26 @@ export interface KnownWordRecord {
   updatedAt: number;
 }
 
+export type AnkiCardState = 'new' | 'learning' | 'due' | 'review' | 'suspended' | 'buried';
+
+export type AnkiEase = 1 | 2 | 3 | 4;
+
+export interface AnkiCardSnapshot {
+  cardId: number;
+  noteId: number;
+  normalized: string;
+  surface: string;
+  deckName: string;
+  modelName: string;
+  state: AnkiCardState;
+  intervalDays: number;
+  reps: number;
+  lapses: number;
+  due: number;
+  nextReviews: string[];
+  updatedAt: number;
+}
+
 export interface Token {
   nodeIndex: number;
   start: number;
@@ -123,6 +143,7 @@ export interface LookupResult {
   frequencyRank?: number;
   knownSources: KnownWordRecord['sources'];
   knownByFrequency: boolean;
+  ankiCards: AnkiCardSnapshot[];
   ipa: IpaTranscription[];
   entries: LookupEntry[];
 }
@@ -131,6 +152,7 @@ export type RuntimeRequest =
   | { type: 'tokenizeAndClassify'; nodes: string[] }
   | { type: 'lookup'; query: string }
   | { type: 'setKnown'; term: string; known: boolean }
+  | { type: 'reviewAnkiCard'; cardId: number; ease: AnkiEase }
   | { type: 'scanActivePage' }
   | { type: 'clearActivePage' }
   | { type: 'scanPage' }

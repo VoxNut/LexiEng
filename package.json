@@ -1,7 +1,7 @@
 {
-  "name": "lexijap",
-  "version": "0.1.0",
-  "description": "A local-first English immersion reader for Chrome and Edge, powered by Rust and your own Yomitan dictionaries.",
+  "name": "lexieng",
+  "version": "0.2.0",
+  "description": "A local-first English immersion reader with Rust-powered Yomitan lookup and Anki scheduler reviews.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -27,7 +27,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/VoxNut/lexijap.git"
+    "url": "https://github.com/VoxNut/LexiEng.git"
   },
   "engines": {
     "node": ">=22"

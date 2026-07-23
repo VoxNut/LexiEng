@@ -4,8 +4,8 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
-const generated = path.join(root, '.generated', 'wasm', 'lexijap_core.js');
-const wasmPath = path.join(root, '.generated', 'wasm', 'lexijap_core_bg.wasm');
+const generated = path.join(root, '.generated', 'wasm', 'lexieng_core.js');
+const wasmPath = path.join(root, '.generated', 'wasm', 'lexieng_core_bg.wasm');
 
 if (process.argv.length < 3) {
   console.error('Usage: npm run verify:dictionary -- <dictionary.zip> [more.zip]');
