@@ -14,10 +14,14 @@ The workflow is inspired by [JitenReader](https://github.com/Sirush/JitenReader)
 - Auto-detects common fields such as `Word`, `Expression`, `Term`, `Vocabulary`, and `Front`, or lets you choose a field explicitly.
 - Excludes frequency ranks 1–20,000 by default, with editable minimum and maximum target ranks.
 - Opens the local dictionary for the word under the pointer with `Q`, even before a page scan.
-- Scans a page only when requested and marks target vocabulary for click or Shift-hover lookup; `Q` remains available for every other word.
-- Shows Anki card state, current interval, reviews, lapses, and the four next intervals calculated by Anki’s active scheduler (including FSRS).
-- Sends deliberate Again, Hard, Good, or Easy grades through Anki’s own scheduler.
-- Provides a persistent Chromium side panel for lookup and reading coverage.
+- Parses every English token on request and applies JitenReader-style New, Learning, Young, Mature, Due, Mastered, Suspended, frequency-known, and target states.
+- Keeps parsing text added by article readers, subtitle tools, and single-page apps after the first parse.
+- Shows Anki card state, current interval, reviews, and lapses alongside real grading controls.
+- Sends deliberate Again, Hard, Good, or Easy grades through Anki’s own scheduler; keys `1`–`4` work while the popup is open.
+- Mines unknown words, local definitions, IPA, frequency, and the surrounding sentence into the configured Anki note type.
+- Provides an in-page coverage/status bar with parse, reader, mass-review, clear, and settings controls.
+- Opens extracted article content in a focused reader view and parses it immediately.
+- Uses a compact toolbar widget like JitenReader. There is no side panel.
 - Keeps manual known-word overrides without changing Anki notes.
 - Includes Default, Sepia, Rosé Pine, Nord, Catppuccin Mocha, and Monochrome themes.
 - Uses a bundled Inter variable font with Noto Sans JP, Yu Gothic UI, and Meiryo fallbacks.
@@ -30,7 +34,7 @@ The workflow is inspired by [JitenReader](https://github.com/Sirush/JitenReader)
 3. Open `chrome://extensions/` in Chrome or `edge://extensions/` in Edge.
 4. Enable **Developer mode**.
 5. Choose **Load unpacked** and select the extracted folder containing `manifest.json`.
-6. Pin LexiEng and click its toolbar icon to open the side panel.
+6. Pin LexiEng and click its toolbar icon to open the compact command widget.
 
 Chrome or Edge 116 and newer are supported.
 
@@ -66,7 +70,7 @@ Large collections can contain millions of entries and take several minutes to im
 4. Test the connection and choose the field containing the headword. **Detect automatically** prefers a field named `Word`.
 5. Choose **Sync words + schedules**.
 
-Sync reads `findCards` and `cardsInfo`, then replaces only LexiEng’s local Anki snapshot. Manual known words remain intact. A lookup’s review buttons call AnkiConnect’s `answerCards` only after you click a grade; the resulting interval is calculated and stored by Anki’s active scheduler. LexiEng never edits or deletes notes. If AnkiConnect rejects the extension origin, add the installed `chrome-extension://<extension-id>` origin to AnkiConnect's `webCorsOriginList` and restart Anki.
+Sync reads `findCards` and `cardsInfo`, then replaces only LexiEng’s local Anki snapshot. Manual known words remain intact. A lookup’s review buttons call AnkiConnect’s `answerCards` only after you click a grade; the resulting interval is calculated and stored by Anki’s active scheduler. **Add to Anki** deliberately creates a new note using the configured field mapping. LexiEng never edits or deletes existing notes. If AnkiConnect rejects the extension origin, add the installed `chrome-extension://<extension-id>` origin to AnkiConnect's `webCorsOriginList` and restart Anki.
 
 ### 3. Set the frequency range
 
@@ -84,13 +88,15 @@ Anki and manual known-word status always win over the frequency range. When seve
 ## Reading workflow
 
 1. Open a normal web page.
-2. Point at a word and press `Q` to open its local definitions, IPA, frequency, Anki state, and review controls. This works without scanning first.
-3. To mark all target vocabulary, click **Scan page** in the side panel, use the page context menu, or press `Alt+Shift+L`.
-4. Click a parsed word, or hold Shift while hovering it, to open the same popup.
-5. If the word has an Anki card, choose Again, Hard, Good, or Easy to review it through Anki’s scheduler.
-6. Mark a word known manually when needed, or choose **Clear marks** before editing a highly interactive page.
+2. Point at a word and press `Q` to open its local definitions, IPA, frequency, Anki state, and review controls. This works before parsing.
+3. Parse the page with the toolbar widget, context menu, in-page status bar, or `Alt+P`. If text is selected, `Alt+P` parses only that selection.
+4. Press `Q` or click any parsed word. Enable hover lookup in settings if desired.
+5. If the word has an Anki card, click Again, Hard, Good, or Easy—or press `1`, `2`, `3`, or `4`—to review it through Anki’s active scheduler.
+6. If it is unknown, click **Add to Anki** to create a mining note with the surrounding sentence and imported dictionary data.
+7. Press `Alt+H` for reader mode, `Alt+L` to look up selected text, or `Alt+S` to toggle the status bar.
+8. Use the status-bar **Review** action to grade eligible visible cards as Good in one confirmed batch.
 
-LexiEng deliberately avoids automatic full-page scanning. The `Q` lookup examines only the word at the pointer; a scan remains an explicit action. This reduces startup work, prevents background CPU use, and gives you control over DOM changes.
+Parsing remains explicit, but once enabled LexiEng observes newly added text and parses it in bounded batches. The `Q` lookup still examines only the word at the pointer when the page has not been parsed.
 
 ## Build from source
 
@@ -121,22 +127,28 @@ The ZIP is written to `packages/`.
 
 ```text
 Web page content script
-        │ text batches
-        ▼
+        ├── trigger + dynamic parsers
+        ├── word-state highlighter
+        ├── shadow-DOM dictionary / Anki popup
+        ├── in-page status bar
+        └── focused reader mode
+                    │ text batches
+                    ▼
 Manifest V3 service worker ── Rust/WASM tokenizer + inflection candidates
-        │
         ├── IndexedDB: dictionary terms, IPA/frequency metadata, known words, Anki schedules
         ├── chrome.storage.local: small user settings
-        └── Side panel: lookup, coverage, manual known state, Anki review
+        └── AnkiConnect: sync, mining, grading, and mass review
 
 Settings page
         ├── Dedicated Rust/WASM ZIP worker ── bounded import batches ── IndexedDB
-        └── AnkiConnect on localhost ── card sync + user-triggered scheduler reviews
+        └── dictionary, Anki, parser, popup, status, review, reader, and theme configuration
 ```
 
 JavaScript handles browser APIs, IndexedDB, safe DOM rendering, and UI. Rust handles Unicode tokenization, normalization, inflection candidates, ZIP decompression, Yomitan bank parsing, and frequency extraction.
 
 Structured dictionary content is rendered through an element/style allowlist; raw dictionary HTML is never injected. Manifest V3 permits only code packaged with the extension.
+
+The exact JitenReader behavior being adapted, plus intentional English-specific differences, is tracked in [docs/JITEN_PARITY.md](docs/JITEN_PARITY.md).
 
 ## Verification
 

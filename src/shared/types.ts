@@ -13,12 +13,34 @@ export interface Settings {
   theme: Theme;
   ankiUrl: string;
   ankiDeck: string;
+  ankiModel: string;
   ankiField: string;
+  ankiMeaningField: string;
+  ankiSentenceField: string;
+  ankiIpaField: string;
+  ankiFrequencyField: string;
+  matureIntervalDays: number;
   knownFrequencyCeiling: number;
   frequencyMin: number;
   frequencyMax: number;
   frequencyDictionaryId: string;
   highlightUnranked: boolean;
+  parseDynamicContent: boolean;
+  showPopupOnHover: boolean;
+  popupWidth: number;
+  popupHeight: number;
+  statusBarEnabled: boolean;
+  statusBarAutoHide: boolean;
+  statusBarPosition: 'top' | 'bottom';
+  massReviewNew: boolean;
+  massReviewDue: boolean;
+  massReviewLearning: boolean;
+  massReviewYoung: boolean;
+  massReviewMature: boolean;
+  massReviewRequireConfirm: boolean;
+  readerFontSize: number;
+  readerWidth: number;
+  readerLineHeight: number;
 }
 
 export interface DictionaryRecord {
@@ -91,7 +113,6 @@ export interface AnkiCardSnapshot {
   reps: number;
   lapses: number;
   due: number;
-  nextReviews: string[];
   updatedAt: number;
 }
 
@@ -106,16 +127,32 @@ export interface Token {
 
 export type WordState = 'known-anki' | 'known-manual' | 'known-frequency' | 'target' | 'outside-range';
 
+export type LearningState =
+  | 'new'
+  | 'learning'
+  | 'young'
+  | 'mature'
+  | 'due'
+  | 'mastered'
+  | 'suspended'
+  | 'buried'
+  | 'frequency'
+  | 'target'
+  | 'outside-range';
+
 export interface ClassifiedToken extends Token {
   state: WordState;
+  learningState: LearningState;
   frequencyRank?: number;
   hasDefinition: boolean;
   matched: string;
+  ankiCardIds: number[];
 }
 
 export interface ScanStats {
   total: number;
   unique: number;
+  uniqueKnown: number;
   known: number;
   knownAnki: number;
   knownFrequency: number;
@@ -123,6 +160,8 @@ export interface ScanStats {
   outsideRange: number;
   unranked: number;
   coverage: number;
+  uniqueCoverage: number;
+  states: Partial<Record<LearningState, number>>;
 }
 
 export interface LookupEntry extends TermRecord {
@@ -148,14 +187,33 @@ export interface LookupResult {
   entries: LookupEntry[];
 }
 
+export interface PageState {
+  parsed: boolean;
+  parsing: boolean;
+  readerOpen: boolean;
+  statusBarVisible: boolean;
+  stats?: ScanStats;
+}
+
 export type RuntimeRequest =
   | { type: 'tokenizeAndClassify'; nodes: string[] }
   | { type: 'lookup'; query: string }
   | { type: 'setKnown'; term: string; known: boolean }
   | { type: 'reviewAnkiCard'; cardId: number; ease: AnkiEase }
+  | { type: 'reviewAnkiCards'; cardIds: number[]; ease: AnkiEase }
+  | { type: 'mineToAnki'; term: string; sentence?: string }
   | { type: 'scanActivePage' }
+  | { type: 'scanActiveSelection' }
   | { type: 'clearActivePage' }
+  | { type: 'openReaderActivePage'; text?: string }
+  | { type: 'toggleStatusBarActivePage' }
+  | { type: 'getActivePageState' }
   | { type: 'scanPage' }
+  | { type: 'scanSelection' }
   | { type: 'clearPage' }
+  | { type: 'openReaderMode'; text?: string }
+  | { type: 'openLookup'; word: string }
+  | { type: 'toggleStatusBar' }
+  | { type: 'getPageState' }
   | { type: 'scanStats'; stats: ScanStats }
   | { type: 'wordSelected'; word: string };

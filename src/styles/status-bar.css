@@ -1,0 +1,129 @@
+:host {
+  all: initial;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.lexieng-status-bar,
+.lexieng-status-launcher {
+  box-sizing: border-box;
+  color: var(--text);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font: 12px/1.2 "Inter", system-ui, sans-serif;
+}
+
+.lexieng-status-bar {
+  position: relative;
+  display: flex;
+  max-width: calc(100vw - 20px);
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px 7px 11px;
+  border-radius: 8px 8px 0 0;
+}
+
+:host([data-position="top"]) .lexieng-status-bar {
+  border-radius: 0 0 8px 8px;
+}
+
+.lexieng-status-brand {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.lexieng-status-coverage,
+.lexieng-status-actions button,
+.lexieng-status-launcher {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--surface);
+  font: 600 11px/1 "Inter", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.lexieng-status-coverage {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.lexieng-status-progress {
+  max-width: 230px;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lexieng-status-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.lexieng-status-coverage:hover,
+.lexieng-status-actions button:hover,
+.lexieng-status-launcher:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.lexieng-status-stats {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 7px);
+  display: none;
+  min-width: 260px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+:host([data-position="top"]) .lexieng-status-stats {
+  top: calc(100% + 7px);
+  bottom: auto;
+}
+
+.lexieng-status-stats[data-open] {
+  display: grid;
+  gap: 6px;
+}
+
+.lexieng-status-stats > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.lexieng-status-stats span {
+  color: var(--muted);
+}
+
+.lexieng-status-stats strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.lexieng-status-launcher {
+  width: 34px;
+  height: 32px;
+  margin: 0 auto;
+  border-radius: 8px 8px 0 0;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  .lexieng-status-progress,
+  .lexieng-status-actions button:nth-child(4),
+  .lexieng-status-actions button:nth-child(5) {
+    display: none;
+  }
+}

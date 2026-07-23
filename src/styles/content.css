@@ -1,7 +1,16 @@
+@font-face {
+  font-family: "LexiEng Inter";
+  src: url("../assets/inter-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 .lexieng-word {
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
+  border-radius: 2px !important;
   color: inherit !important;
   background: transparent !important;
   font: inherit !important;
@@ -13,23 +22,37 @@
 }
 
 .lexieng-word.lexieng-target {
-  padding: 0 1px !important;
+  padding-inline: 1px !important;
   border-bottom: 2px solid #b96325 !important;
-  border-radius: 2px !important;
   background: color-mix(in srgb, #f3b77f 24%, transparent) !important;
 }
 
-.lexieng-word.lexieng-target:hover,
-.lexieng-word.lexieng-target:focus-visible {
-  background: color-mix(in srgb, #f3b77f 42%, transparent) !important;
-  outline: 2px solid color-mix(in srgb, #b96325 45%, transparent) !important;
-  outline-offset: 1px !important;
+.lexieng-word.lexieng-state-new {
+  border-bottom: 2px solid #6c62a8 !important;
 }
 
-.lexieng-word:not(.lexieng-target):hover,
-.lexieng-word:not(.lexieng-target):focus-visible {
-  text-decoration: underline dotted currentColor !important;
-  text-underline-offset: 3px !important;
+.lexieng-word.lexieng-state-learning {
+  border-bottom: 2px solid #a56b17 !important;
+}
+
+.lexieng-word.lexieng-state-due {
+  border-bottom: 2px solid #b84a4f !important;
+}
+
+.lexieng-word.lexieng-state-young {
+  border-bottom: 1px dotted #397b70 !important;
+}
+
+.lexieng-word.lexieng-state-suspended,
+.lexieng-word.lexieng-state-buried {
+  text-decoration: line-through dotted color-mix(in srgb, currentColor 35%, transparent) !important;
+}
+
+.lexieng-word:hover,
+.lexieng-word:focus-visible {
+  outline: 2px solid color-mix(in srgb, #246b60 55%, transparent) !important;
+  outline-offset: 1px !important;
+  background: color-mix(in srgb, #8bc7ba 28%, transparent) !important;
 }
 
 #lexieng-popup-host {
@@ -38,8 +61,8 @@
   right: auto !important;
   bottom: auto !important;
   display: block !important;
-  width: min(410px, calc(100vw - 20px)) !important;
-  max-height: min(520px, calc(100vh - 20px)) !important;
+  max-width: calc(100vw - 20px) !important;
+  max-height: calc(100vh - 20px) !important;
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
@@ -47,4 +70,186 @@
   color: initial !important;
   font: initial !important;
   line-height: initial !important;
+}
+
+#lexieng-status-host {
+  position: fixed !important;
+  z-index: 2147483646 !important;
+  left: 50% !important;
+  bottom: 0 !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  transform: translateX(-50%) !important;
+}
+
+#lexieng-status-host[hidden] {
+  display: none !important;
+}
+
+#lexieng-status-host[data-position="top"] {
+  top: 0 !important;
+  bottom: auto !important;
+}
+
+#lexieng-toast {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  max-width: min(420px, calc(100vw - 32px)) !important;
+  padding: 11px 14px !important;
+  border: 1px solid #a13d42 !important;
+  border-radius: 7px !important;
+  color: #20242b !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 24px rgb(32 36 43 / 12%) !important;
+  font: 600 13px/1.45 "LexiEng Inter", system-ui, sans-serif !important;
+}
+
+#lexieng-reader {
+  --lexieng-reader-bg: #f3f2ee;
+  --lexieng-reader-surface: #ffffff;
+  --lexieng-reader-text: #20242b;
+  --lexieng-reader-muted: #656b73;
+  --lexieng-reader-border: #d6d4cd;
+  --lexieng-reader-accent: #246b60;
+  --lexieng-reader-font-size: 20px;
+  --lexieng-reader-width: 46rem;
+  --lexieng-reader-line-height: 1.7;
+  position: fixed !important;
+  z-index: 2147483645 !important;
+  inset: 0 !important;
+  display: block !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--lexieng-reader-text) !important;
+  background: var(--lexieng-reader-bg) !important;
+  font-family: "LexiEng Inter", Charter, "Bitstream Charter", Georgia, serif !important;
+}
+
+#lexieng-reader[data-theme="sepia"] {
+  --lexieng-reader-bg: #eee4d1;
+  --lexieng-reader-surface: #f8f0df;
+  --lexieng-reader-text: #3b3128;
+  --lexieng-reader-muted: #756453;
+  --lexieng-reader-border: #cdbda4;
+  --lexieng-reader-accent: #7a5230;
+}
+
+#lexieng-reader[data-theme="rose-pine"] {
+  --lexieng-reader-bg: #191724;
+  --lexieng-reader-surface: #1f1d2e;
+  --lexieng-reader-text: #e0def4;
+  --lexieng-reader-muted: #908caa;
+  --lexieng-reader-border: #403d52;
+  --lexieng-reader-accent: #9ccfd8;
+}
+
+#lexieng-reader[data-theme="nord"] {
+  --lexieng-reader-bg: #2e3440;
+  --lexieng-reader-surface: #3b4252;
+  --lexieng-reader-text: #eceff4;
+  --lexieng-reader-muted: #b5bcc8;
+  --lexieng-reader-border: #566176;
+  --lexieng-reader-accent: #88c0d0;
+}
+
+#lexieng-reader[data-theme="catppuccin-mocha"] {
+  --lexieng-reader-bg: #1e1e2e;
+  --lexieng-reader-surface: #28283d;
+  --lexieng-reader-text: #cdd6f4;
+  --lexieng-reader-muted: #a6adc8;
+  --lexieng-reader-border: #45475a;
+  --lexieng-reader-accent: #94e2d5;
+}
+
+#lexieng-reader[data-theme="monochrome"] {
+  --lexieng-reader-bg: #ededed;
+  --lexieng-reader-surface: #ffffff;
+  --lexieng-reader-text: #111111;
+  --lexieng-reader-muted: #5b5b5b;
+  --lexieng-reader-border: #bcbcbc;
+  --lexieng-reader-accent: #242424;
+}
+
+#lexieng-reader .lexieng-reader-controls {
+  position: sticky !important;
+  z-index: 3 !important;
+  top: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 9px !important;
+  border-bottom: 1px solid var(--lexieng-reader-border) !important;
+  background: var(--lexieng-reader-surface) !important;
+}
+
+#lexieng-reader .lexieng-reader-controls button {
+  min-height: 32px !important;
+  padding: 5px 10px !important;
+  border: 1px solid var(--lexieng-reader-border) !important;
+  border-radius: 6px !important;
+  color: var(--lexieng-reader-text) !important;
+  background: transparent !important;
+  font: 600 12px/1 "LexiEng Inter", system-ui, sans-serif !important;
+  cursor: pointer !important;
+}
+
+#lexieng-reader .lexieng-reader-controls button:hover {
+  border-color: var(--lexieng-reader-accent) !important;
+}
+
+#lexieng-reader .lexieng-reader-page {
+  box-sizing: border-box !important;
+  width: min(var(--lexieng-reader-width), calc(100% - 32px)) !important;
+  min-height: calc(100vh - 90px) !important;
+  margin: 24px auto 64px !important;
+  padding: clamp(24px, 5vw, 58px) !important;
+  border: 1px solid var(--lexieng-reader-border) !important;
+  border-radius: 9px !important;
+  color: var(--lexieng-reader-text) !important;
+  background: var(--lexieng-reader-surface) !important;
+}
+
+#lexieng-reader .lexieng-reader-page h1 {
+  margin: 0 0 1.3em !important;
+  color: inherit !important;
+  font: 700 clamp(28px, 4vw, 44px)/1.12 "LexiEng Inter", system-ui, sans-serif !important;
+  letter-spacing: -0.035em !important;
+}
+
+#lexieng-reader .lexieng-reader-content {
+  color: inherit !important;
+  font-size: var(--lexieng-reader-font-size) !important;
+  line-height: var(--lexieng-reader-line-height) !important;
+}
+
+#lexieng-reader .lexieng-reader-content p,
+#lexieng-reader .lexieng-reader-content li,
+#lexieng-reader .lexieng-reader-content blockquote {
+  color: inherit !important;
+  font: inherit !important;
+}
+
+#lexieng-reader .lexieng-reader-content img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+#lexieng-reader .lexieng-reader-content a {
+  color: var(--lexieng-reader-accent) !important;
+}
+
+@media (max-width: 620px) {
+  #lexieng-reader .lexieng-reader-page {
+    width: 100% !important;
+    margin-top: 0 !important;
+    border-inline: 0 !important;
+    border-radius: 0 !important;
+  }
 }

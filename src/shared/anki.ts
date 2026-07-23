@@ -25,7 +25,6 @@ export interface AnkiCardInfo {
   due: number;
   reps: number;
   lapses: number;
-  nextReviews?: string[];
 }
 
 export interface AnkiSyncSnapshot {
@@ -65,12 +64,14 @@ export async function requestAnki<T>(
 export async function inspectAnki(url: string, deck: string): Promise<{
   version: number;
   decks: string[];
+  models: string[];
   fields: string[];
   noteCount: number;
 }> {
-  const [version, decks] = await Promise.all([
+  const [version, decks, models] = await Promise.all([
     requestAnki<number>(url, 'version'),
     requestAnki<string[]>(url, 'deckNames'),
+    requestAnki<string[]>(url, 'modelNames'),
   ]);
   const noteIds = deck
     ? await requestAnki<number[]>(url, 'findNotes', {
@@ -81,7 +82,7 @@ export async function inspectAnki(url: string, deck: string): Promise<{
     ? await requestAnki<AnkiNote[]>(url, 'notesInfo', { notes: noteIds.slice(0, 20) })
     : [];
   const fields = [...new Set(sample.flatMap((note) => Object.keys(note.fields)))];
-  return { version, decks, fields, noteCount: noteIds.length };
+  return { version, decks, models, fields, noteCount: noteIds.length };
 }
 
 export async function loadAnkiSnapshot(
@@ -152,6 +153,139 @@ export async function reviewAnkiCard(
   });
 }
 
+export async function reviewAnkiCards(
+  url: string,
+  cardIds: number[],
+  ease: AnkiEase,
+): Promise<AnkiCardSnapshot[]> {
+  const uniqueCardIds = [...new Set(cardIds)].filter(Number.isFinite);
+  if (uniqueCardIds.length === 0) return [];
+
+  const answered = await requestAnki<boolean[]>(url, 'answerCards', {
+    answers: uniqueCardIds.map((cardId) => ({ cardId, ease })),
+  });
+  const accepted = uniqueCardIds.filter((_cardId, index) => answered[index]);
+  if (accepted.length === 0) throw new Error('Anki did not accept any of the selected reviews');
+
+  const [cards, due, suspended] = await Promise.all([
+    requestAnki<AnkiCardInfo[]>(url, 'cardsInfo', { cards: accepted }),
+    requestAnki<boolean[]>(url, 'areDue', { cards: accepted }),
+    requestAnki<Array<boolean | null>>(url, 'areSuspended', { cards: accepted }),
+  ]);
+  const dueById = new Map(accepted.map((cardId, index) => [cardId, Boolean(due[index])]));
+  const suspendedById = new Map(
+    accepted.map((cardId, index) => [cardId, Boolean(suspended[index])]),
+  );
+
+  return cards.map((card) =>
+    toCardSnapshot(card, '', '', {
+      due: dueById.get(card.cardId) ?? false,
+      suspended: suspendedById.get(card.cardId) ?? false,
+      buried: card.queue === -2 || card.queue === -3,
+    }),
+  );
+}
+
+export interface AnkiMiningNote {
+  deck: string;
+  model: string;
+  wordField: string;
+  meaningField: string;
+  sentenceField: string;
+  ipaField: string;
+  frequencyField: string;
+  word: string;
+  meaning: string;
+  sentence: string;
+  ipa: string;
+  frequency: string;
+}
+
+export async function mineAnkiNote(
+  url: string,
+  note: AnkiMiningNote,
+): Promise<{ noteId: number; cards: AnkiCardSnapshot[]; modelName: string }> {
+  const modelName = note.model || (await detectDeckModel(url, note.deck));
+  if (!modelName) {
+    throw new Error('Choose an Anki note type in LexiEng settings before mining');
+  }
+
+  const fieldNames = await requestAnki<string[]>(url, 'modelFieldNames', { modelName });
+  const wordField = resolveFieldName(fieldNames, note.wordField, PREFERRED_FIELDS);
+  if (!wordField) {
+    throw new Error(`Could not find a word field in the Anki note type “${modelName}”`);
+  }
+
+  const fields = Object.fromEntries(fieldNames.map((field) => [field, '']));
+  fields[wordField] = note.word;
+  assignExistingField(fields, note.meaningField, note.meaning);
+  assignExistingField(fields, note.sentenceField, note.sentence);
+  assignExistingField(fields, note.ipaField, note.ipa);
+  assignExistingField(fields, note.frequencyField, note.frequency);
+
+  const noteId = await requestAnki<number | null>(url, 'addNote', {
+    note: {
+      deckName: note.deck,
+      modelName,
+      fields,
+      options: { allowDuplicate: false },
+      tags: ['lexieng'],
+    },
+  });
+  if (!noteId) throw new Error('Anki did not create the note. It may already exist.');
+
+  const cardIds = await requestAnki<number[]>(url, 'findCards', { query: `nid:${noteId}` });
+  const cards = await loadCardSnapshots(url, cardIds, note.word);
+  return { noteId, cards, modelName };
+}
+
+async function detectDeckModel(url: string, deck: string): Promise<string> {
+  const noteIds = await requestAnki<number[]>(url, 'findNotes', {
+    query: `deck:"${escapeAnkiSearch(deck)}"`,
+  });
+  if (noteIds.length === 0) return '';
+  const notes = await requestAnki<AnkiNote[]>(url, 'notesInfo', { notes: [noteIds[0]] });
+  return notes[0]?.modelName ?? '';
+}
+
+async function loadCardSnapshots(
+  url: string,
+  cardIds: number[],
+  surface: string,
+): Promise<AnkiCardSnapshot[]> {
+  if (cardIds.length === 0) return [];
+  const [cards, due, suspended] = await Promise.all([
+    requestAnki<AnkiCardInfo[]>(url, 'cardsInfo', { cards: cardIds }),
+    requestAnki<boolean[]>(url, 'areDue', { cards: cardIds }),
+    requestAnki<Array<boolean | null>>(url, 'areSuspended', { cards: cardIds }),
+  ]);
+  const normalized = normalizeTerm(surface);
+  return cards.map((card, index) =>
+    toCardSnapshot(card, normalized, surface, {
+      due: Boolean(due[index]),
+      suspended: Boolean(suspended[index]),
+      buried: card.queue === -2 || card.queue === -3,
+    }),
+  );
+}
+
+function resolveFieldName(
+  fields: string[],
+  selected: string,
+  preferred: string[],
+): string | undefined {
+  if (selected && fields.includes(selected)) return selected;
+  return preferred.find((field) => fields.includes(field)) ?? fields[0];
+}
+
+function assignExistingField(
+  fields: Record<string, string>,
+  requestedName: string,
+  value: string,
+): void {
+  if (requestedName && requestedName in fields && value) fields[requestedName] = value;
+}
+
 export function selectNoteValue(note: Pick<AnkiNote, 'fields'>, selectedField: string): string {
   if (selectedField && note.fields[selectedField]) return note.fields[selectedField].value;
   for (const name of PREFERRED_FIELDS) {
@@ -205,9 +339,6 @@ function toCardSnapshot(
     reps: Number.isFinite(card.reps) ? card.reps : 0,
     lapses: Number.isFinite(card.lapses) ? card.lapses : 0,
     due: Number.isFinite(card.due) ? card.due : 0,
-    nextReviews: Array.isArray(card.nextReviews)
-      ? card.nextReviews.filter((value): value is string => typeof value === 'string').slice(0, 4)
-      : [],
     updatedAt: Date.now(),
   };
 }

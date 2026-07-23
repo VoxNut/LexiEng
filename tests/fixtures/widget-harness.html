@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiEng widget harness</title>
+    <link rel="stylesheet" href="/dist/styles/base.css" />
+    <link rel="stylesheet" href="/dist/styles/widget.css" />
+    <script>
+      const settings = {
+        theme: 'default',
+        ankiUrl: 'http://127.0.0.1:8765',
+        ankiDeck: 'English Mining',
+        ankiField: 'Word',
+        matureIntervalDays: 21,
+        knownFrequencyCeiling: 20000,
+        frequencyMin: 20001,
+        frequencyMax: 100000,
+        frequencyDictionaryId: '',
+        highlightUnranked: true,
+        parseDynamicContent: true,
+        showPopupOnHover: false,
+        popupWidth: 420,
+        popupHeight: 520,
+        statusBarEnabled: true,
+        statusBarAutoHide: false,
+        statusBarPosition: 'bottom',
+        massReviewNew: false,
+        massReviewDue: true,
+        massReviewLearning: true,
+        massReviewYoung: true,
+        massReviewMature: false,
+        massReviewRequireConfirm: true,
+        readerFontSize: 20,
+        readerWidth: 46,
+        readerLineHeight: 1.7
+      };
+      globalThis.chrome = {
+        runtime: {
+          openOptionsPage: async () => undefined,
+          sendMessage: async (message) => {
+            if (message.type === 'getActivePageState') {
+              return {
+                parsed: true,
+                parsing: false,
+                readerOpen: false,
+                statusBarVisible: true,
+                stats: {
+                  total: 428,
+                  unique: 181,
+                  uniqueKnown: 143,
+                  known: 362,
+                  knownAnki: 118,
+                  knownFrequency: 244,
+                  targets: 44,
+                  outsideRange: 22,
+                  unranked: 8,
+                  coverage: 84.579,
+                  uniqueCoverage: 79.006,
+                  states: { target: 44, due: 7, young: 20, mature: 91, frequency: 244 }
+                }
+              };
+            }
+            return { ok: true };
+          }
+        },
+        storage: {
+          local: {
+            get: async () => ({ settings }),
+            set: async (value) => Object.assign(settings, value.settings)
+          }
+        },
+        tabs: {
+          query: async () => [{ id: 1, title: 'A practical guide to language learning' }]
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <header>
+      <span class="brand-mark" aria-hidden="true">Lx</span>
+      <div>
+        <strong>LexiEng</strong>
+        <span id="page-title">Current page</span>
+      </div>
+      <button id="open-options" class="icon-button" type="button" title="Settings">Settings</button>
+    </header>
+    <main>
+      <div class="state-row"><span>Reading coverage</span><strong id="coverage">Not parsed</strong></div>
+      <div class="state-detail" id="state-detail">Point at a word and press Q, or parse the page.</div>
+      <div class="primary-actions">
+        <button id="parse-page" class="primary-button" type="button">Parse page</button>
+        <button id="parse-selection" class="secondary-button" type="button">Parse selection</button>
+      </div>
+      <div class="secondary-actions">
+        <button id="reader-mode" class="secondary-button" type="button">Reader mode</button>
+        <button id="toggle-status" class="secondary-button" type="button">Status bar</button>
+        <button id="clear-page" class="secondary-button" type="button">Clear</button>
+      </div>
+      <label class="theme-row">
+        <span>Theme</span>
+        <select id="theme">
+          <option value="default">Default</option><option value="sepia">Sepia</option>
+          <option value="rose-pine">Rosé Pine</option><option value="nord">Nord</option>
+          <option value="catppuccin-mocha">Catppuccin Mocha</option>
+          <option value="monochrome">Monochrome</option>
+        </select>
+      </label>
+    </main>
+    <footer>
+      <span><kbd>Q</kbd> dictionary</span><span><kbd>Alt+P</kbd> parse</span><span><kbd>Alt+H</kbd> reader</span>
+    </footer>
+    <div id="error" role="status" hidden></div>
+    <script type="module" src="/dist/widget.js"></script>
+  </body>
+</html>

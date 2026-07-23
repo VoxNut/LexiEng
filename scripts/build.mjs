@@ -54,8 +54,8 @@ await Promise.all([
   }),
   build({
     ...common,
-    entryPoints: [path.join(root, 'src', 'sidepanel.ts')],
-    outfile: path.join(outDir, 'sidepanel.js'),
+    entryPoints: [path.join(root, 'src', 'widget.ts')],
+    outfile: path.join(outDir, 'widget.js'),
     format: 'esm',
   }),
   build({
