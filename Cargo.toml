@@ -1,0 +1,16 @@
+[workspace]
+members = ["crates/lexijap-core"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/VoxNut/lexijap"
+rust-version = "1.85"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

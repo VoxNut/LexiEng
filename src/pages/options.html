@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiJap Settings</title>
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/options.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="wordmark" href="#overview" aria-label="LexiJap settings home">
+        <span class="brand-mark" aria-hidden="true">Lx</span>
+        <span><strong>LexiJap</strong><small>English Reader</small></span>
+      </a>
+      <div id="global-status" class="global-status" role="status">Everything is stored locally</div>
+    </header>
+
+    <div class="settings-layout">
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a href="#overview">Overview</a>
+        <a href="#dictionaries">Dictionaries</a>
+        <a href="#anki">Anki knowledge</a>
+        <a href="#frequency">Frequency filter</a>
+        <a href="#appearance">Appearance</a>
+      </nav>
+
+      <main class="settings-main">
+        <section id="overview" class="settings-section hero-section">
+          <span class="eyebrow">Local-first immersion</span>
+          <h1>Read the web at your level.</h1>
+          <p class="lead">LexiJap combines your own Yomitan dictionaries, your <strong>English Mining</strong> deck, and a frequency floor so the words you already know stay out of the way.</p>
+          <div class="summary-grid">
+            <article><strong id="dictionary-count">0</strong><span>dictionaries</span></article>
+            <article><strong id="definition-count">0</strong><span>definitions</span></article>
+            <article><strong id="known-count">0</strong><span>Anki words</span></article>
+          </div>
+        </section>
+
+        <section id="dictionaries" class="settings-section">
+          <div class="section-heading wide-heading">
+            <div>
+              <span class="eyebrow">Yomitan / Yomichan</span>
+              <h2>Dictionaries</h2>
+              <p>Import definition, IPA, and frequency archives directly. ZIP files are processed one at a time by the Rust worker.</p>
+            </div>
+            <label class="primary-button file-button" for="dictionary-files">Choose ZIP files</label>
+            <input id="dictionary-files" type="file" accept=".zip,application/zip" multiple hidden />
+          </div>
+
+          <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Drop Yomitan ZIP files or open the file picker">
+            <strong>Drop all dictionary ZIPs here</strong>
+            <span>Definitions, structured content, IPA metadata, and frequency ranks are supported.</span>
+          </div>
+
+          <div id="import-panel" class="import-panel" hidden>
+            <div><strong id="import-title">Preparing import…</strong><span id="import-detail"></span></div>
+            <progress id="import-progress" max="100" value="0">0%</progress>
+          </div>
+
+          <div id="dictionary-list" class="dictionary-list" aria-live="polite"></div>
+        </section>
+
+        <section id="anki" class="settings-section">
+          <span class="eyebrow">Known-word source</span>
+          <h2>Anki knowledge</h2>
+          <p>With Anki open and AnkiConnect installed, LexiJap reads the word field from every note in your mining deck. It never changes or deletes Anki cards.</p>
+
+          <div class="form-grid">
+            <label>
+              <span>AnkiConnect URL</span>
+              <input id="anki-url" type="url" value="http://127.0.0.1:8765" spellcheck="false" />
+            </label>
+            <label>
+              <span>Deck</span>
+              <input id="anki-deck" type="text" value="English Mining" list="anki-decks" />
+              <datalist id="anki-decks"></datalist>
+            </label>
+            <label>
+              <span>Word field</span>
+              <select id="anki-field">
+                <option value="">Detect automatically</option>
+              </select>
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="test-anki" class="secondary-button" type="button">Test connection</button>
+            <button id="sync-anki" class="primary-button" type="button">Sync English Mining</button>
+          </div>
+          <div id="anki-status" class="inline-status" role="status">Not synced yet</div>
+        </section>
+
+        <section id="frequency" class="settings-section">
+          <span class="eyebrow">Target vocabulary</span>
+          <h2>Frequency filter</h2>
+          <p>Ranks at or below the known ceiling are treated as already known. Anki words are always known regardless of rank. The default excludes the first 20,000 words.</p>
+
+          <div class="form-grid">
+            <label>
+              <span>Frequency dictionary</span>
+              <select id="frequency-dictionary"><option value="">Best available frequency list</option></select>
+            </label>
+            <label>
+              <span>Known ceiling</span>
+              <input id="known-frequency-ceiling" type="number" min="0" max="1000000" step="1000" value="20000" />
+              <small>Ranks 1–20,000 are ignored by default.</small>
+            </label>
+            <label>
+              <span>Target range starts</span>
+              <input id="frequency-min" type="number" min="1" max="1000000" step="1000" value="20001" />
+            </label>
+            <label>
+              <span>Target range ends</span>
+              <input id="frequency-max" type="number" min="1" max="1000000" step="1000" value="100000" />
+            </label>
+          </div>
+          <label class="check-row">
+            <input id="highlight-unranked" type="checkbox" checked />
+            <span><strong>Include words without a frequency rank</strong><small>Useful for technical terms and proper vocabulary not covered by a list.</small></span>
+          </label>
+          <button id="save-frequency" class="primary-button" type="button">Save filter</button>
+        </section>
+
+        <section id="appearance" class="settings-section">
+          <span class="eyebrow">Quiet by design</span>
+          <h2>Appearance</h2>
+          <p>Flat colors, no gradients, no motion. Inter is bundled for consistent English text; Japanese definitions fall back to Noto Sans JP, Yu Gothic UI, or Meiryo.</p>
+          <fieldset class="theme-grid">
+            <legend class="sr-only">Theme</legend>
+            <label data-preview="default"><input type="radio" name="theme" value="default" checked /><span>Default</span></label>
+            <label data-preview="sepia"><input type="radio" name="theme" value="sepia" /><span>Sepia</span></label>
+            <label data-preview="rose-pine"><input type="radio" name="theme" value="rose-pine" /><span>Rosé Pine</span></label>
+            <label data-preview="nord"><input type="radio" name="theme" value="nord" /><span>Nord</span></label>
+            <label data-preview="catppuccin-mocha"><input type="radio" name="theme" value="catppuccin-mocha" /><span>Catppuccin Mocha</span></label>
+            <label data-preview="monochrome"><input type="radio" name="theme" value="monochrome" /><span>Monochrome</span></label>
+          </fieldset>
+        </section>
+      </main>
+    </div>
+
+    <template id="dictionary-row-template">
+      <article class="dictionary-row">
+        <label class="toggle"><input class="dictionary-enabled" type="checkbox" /><span aria-hidden="true"></span></label>
+        <div class="dictionary-copy"><strong></strong><span></span></div>
+        <div class="dictionary-stats"></div>
+        <button class="danger-button dictionary-delete" type="button">Remove</button>
+      </article>
+    </template>
+
+    <script type="module" src="../options.js"></script>
+  </body>
+</html>

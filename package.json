@@ -1,0 +1,45 @@
+{
+  "name": "lexijap",
+  "version": "0.1.0",
+  "description": "A local-first English immersion reader for Chrome and Edge, powered by Rust and your own Yomitan dictionaries.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --dev",
+    "check": "npm run typecheck && npm run test && npm run test:rust",
+    "package": "node scripts/package.mjs",
+    "test": "vitest run",
+    "test:rust": "cargo test --workspace",
+    "typecheck": "tsc --noEmit",
+    "verify:dictionary": "node scripts/verify-dictionary.mjs"
+  },
+  "keywords": [
+    "anki",
+    "browser-extension",
+    "dictionary",
+    "english-learning",
+    "rust",
+    "wasm",
+    "yomitan"
+  ],
+  "author": "VoxNut",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoxNut/lexijap.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.2.6",
+    "@types/archiver": "^7.0.0",
+    "@types/chrome": "^0.1.29",
+    "archiver": "^7.0.1",
+    "esbuild": "^0.25.12",
+    "sharp": "^0.35.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

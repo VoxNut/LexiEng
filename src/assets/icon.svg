@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="LexiJap">
+  <rect width="128" height="128" rx="24" fill="#20242b"/>
+  <path d="M29 25h28c14 0 24 8 24 22v56H52c-13 0-23-8-23-21V25Z" fill="#f5f2ea"/>
+  <path d="M99 25H71c-8 0-14 3-18 8v70h23c13 0 23-8 23-21V25Z" fill="#dce6e3"/>
+  <path d="M53 35v67" stroke="#20242b" stroke-width="5"/>
+  <path d="M41 47h1M41 59h1M65 47h22M65 59h22M65 71h17" stroke="#20242b" stroke-width="5" stroke-linecap="round"/>
+</svg>

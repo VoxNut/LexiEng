@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "LexiJap — English Reader",
+  "short_name": "LexiJap",
+  "version": "0.1.0",
+  "description": "Local-first English immersion reading with Yomitan dictionaries, frequency filtering, and Anki knowledge sync.",
+  "minimum_chrome_version": "116",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open LexiJap",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "options_ui": {
+    "page": "pages/options.html",
+    "open_in_tab": true
+  },
+  "side_panel": {
+    "default_path": "pages/sidepanel.html"
+  },
+  "commands": {
+    "scan-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Scan or clear the current page"
+    }
+  },
+  "permissions": [
+    "contextMenus",
+    "sidePanel",
+    "storage",
+    "tabs",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles/content.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "styles/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

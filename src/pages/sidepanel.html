@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiJap Reader</title>
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/sidepanel.css" />
+  </head>
+  <body>
+    <header class="panel-header">
+      <div class="brand-mark" aria-hidden="true">Lx</div>
+      <div>
+        <h1>LexiJap</h1>
+        <p>English reading companion</p>
+      </div>
+      <button id="open-options" class="icon-button" type="button" aria-label="Open settings" title="Settings">⚙</button>
+    </header>
+
+    <main>
+      <section class="scan-card" aria-labelledby="page-heading">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Current page</span>
+            <h2 id="page-heading">Reading coverage</h2>
+          </div>
+          <span id="scan-status" class="status-pill">Ready</span>
+        </div>
+        <div class="coverage-grid" aria-live="polite">
+          <div><strong id="coverage-value">—</strong><span>coverage</span></div>
+          <div><strong id="known-value">—</strong><span>known</span></div>
+          <div><strong id="target-value">—</strong><span>targets</span></div>
+        </div>
+        <div class="button-row">
+          <button id="scan-page" class="primary-button" type="button">Scan page</button>
+          <button id="clear-page" class="secondary-button" type="button">Clear marks</button>
+        </div>
+        <p class="hint">Shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></p>
+      </section>
+
+      <section class="lookup-section" aria-labelledby="lookup-heading">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Dictionary</span>
+            <h2 id="lookup-heading">Look up a word</h2>
+          </div>
+        </div>
+        <form id="lookup-form" class="search-form">
+          <label class="sr-only" for="lookup-input">Word to look up</label>
+          <input id="lookup-input" name="query" type="search" autocomplete="off" spellcheck="false" placeholder="Type or select a word" />
+          <button class="primary-button" type="submit">Look up</button>
+        </form>
+        <div id="lookup-empty" class="empty-state">
+          <strong>Your dictionaries stay on this device.</strong>
+          <span>Scan a page, select a highlighted word, or search here.</span>
+        </div>
+        <div id="lookup-results" class="lookup-results" hidden aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script type="module" src="../sidepanel.js"></script>
+  </body>
+</html>
