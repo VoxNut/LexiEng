@@ -2,15 +2,16 @@
   "manifest_version": 3,
   "name": "LexiEng — English Reader",
   "short_name": "LexiEng",
-  "version": "0.2.0",
-  "description": "Local English dictionary popups, frequency filtering, and Anki scheduler reviews for immersion reading.",
+  "version": "0.3.0",
+  "description": "JitenReader-style English immersion reading with local dictionaries, frequency filtering, and Anki FSRS reviews.",
   "minimum_chrome_version": "116",
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "action": {
-    "default_title": "Open LexiEng",
+    "default_title": "LexiEng",
+    "default_popup": "pages/widget.html",
     "default_icon": {
       "16": "assets/icon-16.png",
       "32": "assets/icon-32.png"
@@ -26,20 +27,16 @@
     "page": "pages/options.html",
     "open_in_tab": true
   },
-  "side_panel": {
-    "default_path": "pages/sidepanel.html"
-  },
   "commands": {
-    "scan-page": {
+    "parse-page": {
       "suggested_key": {
-        "default": "Alt+Shift+L"
+        "default": "Alt+P"
       },
-      "description": "Scan the current page for target words"
+      "description": "Parse the current page with LexiEng"
     }
   },
   "permissions": [
     "contextMenus",
-    "sidePanel",
     "storage",
     "tabs",
     "unlimitedStorage"
@@ -53,7 +50,8 @@
       "js": ["content.js"],
       "css": ["styles/content.css"],
       "run_at": "document_idle",
-      "all_frames": false
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "content_security_policy": {

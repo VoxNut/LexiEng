@@ -64,6 +64,7 @@ export function renderLookupResult(
   onLookup: (term: string) => void,
   onKnownChange: (known: boolean) => void,
   onAnkiReview?: (cardId: number, ease: AnkiEase) => Promise<void>,
+  onMine?: () => Promise<void>,
 ): void {
   container.replaceChildren();
 
@@ -100,13 +101,29 @@ export function renderLookupResult(
       ? 'Excluded by frequency floor'
       : 'Not in your known-word list';
   knownLine.append(knownText);
+  const knownActions = element('div', 'known-actions');
+  if (!isKnown && onMine) {
+    const mineButton = element('button', 'primary-button');
+    mineButton.type = 'button';
+    mineButton.textContent = 'Add to Anki';
+    mineButton.addEventListener('click', () => {
+      mineButton.disabled = true;
+      mineButton.textContent = 'Adding…';
+      void onMine().catch((error: unknown) => {
+        mineButton.disabled = false;
+        mineButton.textContent = error instanceof Error ? error.message : String(error);
+      });
+    });
+    knownActions.append(mineButton);
+  }
   if (isManual || !isKnown) {
     const knownButton = element('button', isManual ? 'danger-button' : 'secondary-button');
     knownButton.type = 'button';
     knownButton.textContent = isManual ? 'Unmark manual' : 'Mark known';
     knownButton.addEventListener('click', () => onKnownChange(!isManual));
-    knownLine.append(knownButton);
+    knownActions.append(knownButton);
   }
+  knownLine.append(knownActions);
   header.append(knownLine);
   container.append(header);
 
@@ -167,7 +184,7 @@ function renderAnkiCards(
   const title = element('div', 'anki-review-title');
   title.append(
     textElement('strong', 'Anki / FSRS'),
-    textElement('span', 'Intervals come from Anki’s active scheduler.'),
+    textElement('span', 'Your grade goes to Anki; its active scheduler sets the interval.'),
   );
   panel.append(title);
 
@@ -205,8 +222,6 @@ function renderAnkiCard(
     const button = element('button', `anki-grade anki-grade-${ease}`);
     button.type = 'button';
     button.append(textElement('strong', label));
-    const nextReview = card.nextReviews[ease - 1];
-    if (nextReview) button.append(textElement('span', nextReview));
     button.addEventListener('click', () => {
       for (const item of buttons) item.disabled = true;
       status.textContent = `Saving ${label.toLowerCase()} to Anki…`;

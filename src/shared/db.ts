@@ -4,6 +4,7 @@ import {
   KnownWordRecord,
   LookupEntry,
   LookupResult,
+  LearningState,
   MetaRecord,
   Settings,
   TermRecord,
@@ -232,6 +233,24 @@ export async function updateAnkiCard(snapshot: AnkiCardSnapshot): Promise<AnkiCa
   return updated;
 }
 
+export async function addAnkiKnownTerm(term: string): Promise<void> {
+  const normalized = normalizeTerm(term);
+  if (!normalized) return;
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.knownWords, 'readwrite');
+  const store = transaction.objectStore(STORES.knownWords);
+  const current = await requestResult<KnownWordRecord | undefined>(store.get(normalized));
+  const sources = new Set(current?.sources ?? []);
+  sources.add('anki');
+  store.put({
+    normalized,
+    surface: current?.surface ?? term,
+    sources: [...sources],
+    updatedAt: Date.now(),
+  } satisfies KnownWordRecord);
+  await transactionDone(transaction);
+}
+
 export async function setManualKnown(term: string, known: boolean): Promise<void> {
   const normalized = normalizeTerm(term);
   if (!normalized) return;
@@ -257,16 +276,31 @@ export async function setManualKnown(term: string, known: boolean): Promise<void
 export async function classifyTokens(
   tokens: Token[],
   settings: Settings,
-): Promise<Array<Token & { state: WordState; frequencyRank?: number; hasDefinition: boolean; matched: string }>> {
+): Promise<
+  Array<
+    Token & {
+      state: WordState;
+      learningState: LearningState;
+      frequencyRank?: number;
+      hasDefinition: boolean;
+      matched: string;
+      ankiCardIds: number[];
+    }
+  >
+> {
   const database = await openDatabase();
   const dictionaries = await listDictionaries();
   const enabled = new Set(
     dictionaries.filter((dictionary) => dictionary.enabled && dictionary.importComplete).map(({ id }) => id),
   );
-  const transaction = database.transaction([STORES.knownWords, STORES.terms, STORES.metadata], 'readonly');
+  const transaction = database.transaction(
+    [STORES.knownWords, STORES.terms, STORES.metadata, STORES.ankiCards],
+    'readonly',
+  );
   const knownStore = transaction.objectStore(STORES.knownWords);
   const termIndex = transaction.objectStore(STORES.terms).index('lookupKeys');
   const metaIndex = transaction.objectStore(STORES.metadata).index('lookupKeys');
+  const ankiIndex = transaction.objectStore(STORES.ankiCards).index('normalized');
   const cache = new Map<string, Promise<WordClassification>>();
 
   const classified = await Promise.all(
@@ -274,7 +308,15 @@ export async function classifyTokens(
       const key = token.candidates.join('\u0000');
       let promise = cache.get(key);
       if (!promise) {
-        promise = classifyCandidates(token.candidates, knownStore, termIndex, metaIndex, enabled, settings);
+        promise = classifyCandidates(
+          token.candidates,
+          knownStore,
+          termIndex,
+          metaIndex,
+          ankiIndex,
+          enabled,
+          settings,
+        );
         cache.set(key, promise);
       }
       return { ...token, ...(await promise) };
@@ -345,9 +387,11 @@ export async function lookupTerm(
 
 interface WordClassification {
   state: WordState;
+  learningState: LearningState;
   frequencyRank?: number;
   hasDefinition: boolean;
   matched: string;
+  ankiCardIds: number[];
 }
 
 async function classifyCandidates(
@@ -355,13 +399,15 @@ async function classifyCandidates(
   knownStore: IDBObjectStore,
   termIndex: IDBIndex,
   metaIndex: IDBIndex,
+  ankiIndex: IDBIndex,
   enabled: Set<string>,
   settings: Settings,
 ): Promise<WordClassification> {
-  const [known, terms, metadata] = await Promise.all([
+  const [known, terms, metadata, ankiCards] = await Promise.all([
     firstKnownRecord(candidates, knownStore),
     getAllUnique<TermRecord>(candidates, termIndex),
     getAllUnique<MetaRecord>(candidates, metaIndex),
+    getAllUnique<AnkiCardSnapshot>(candidates, ankiIndex, (entry) => entry.cardId),
   ]);
   const enabledTerms = terms.filter((entry) => enabled.has(entry.dictionaryId));
   const enabledMetadata = metadata.filter((entry) => enabled.has(entry.dictionaryId));
@@ -371,7 +417,14 @@ async function classifyCandidates(
     candidates.find((candidate) => enabledTerms.some((entry) => entry.lookupKeys.includes(candidate))) ??
     candidates[0] ??
     '';
-  return { state, frequencyRank, hasDefinition: enabledTerms.length > 0, matched };
+  return {
+    state,
+    learningState: selectLearningState(known, state, ankiCards, settings),
+    frequencyRank,
+    hasDefinition: enabledTerms.length > 0,
+    matched,
+    ankiCardIds: ankiCards.map((card) => card.cardId),
+  };
 }
 
 export function selectWordState(
@@ -390,6 +443,32 @@ export function selectWordState(
   return frequencyRank >= settings.frequencyMin && frequencyRank <= settings.frequencyMax
     ? 'target'
     : 'outside-range';
+}
+
+export function selectLearningState(
+  known: KnownWordRecord | undefined,
+  wordState: WordState,
+  cards: AnkiCardSnapshot[],
+  settings: Settings,
+): LearningState {
+  if (known?.sources.includes('manual')) return 'mastered';
+  if (cards.some((card) => card.state === 'suspended')) return 'suspended';
+  if (cards.some((card) => card.state === 'buried')) return 'buried';
+  if (cards.some((card) => card.state === 'due')) return 'due';
+  if (cards.some((card) => card.state === 'learning')) return 'learning';
+  if (cards.some((card) => card.state === 'new')) return 'new';
+
+  const reviewCards = cards.filter((card) => card.state === 'review');
+  if (reviewCards.length > 0) {
+    return reviewCards.some((card) => card.intervalDays >= settings.matureIntervalDays)
+      ? 'mature'
+      : 'young';
+  }
+
+  if (wordState === 'known-anki') return 'young';
+  if (wordState === 'known-frequency') return 'frequency';
+  if (wordState === 'target') return 'target';
+  return 'outside-range';
 }
 
 export function selectFrequencyRank(metadata: MetaRecord[], settings: Settings): number | undefined {

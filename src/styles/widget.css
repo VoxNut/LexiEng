@@ -1,0 +1,125 @@
+body {
+  width: 330px;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+header strong,
+header span {
+  display: block;
+  overflow: hidden;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+header span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+header .icon-button {
+  width: auto;
+  min-height: 32px;
+  padding-inline: 9px;
+  font-size: 10px;
+}
+
+main {
+  padding: 14px;
+}
+
+.state-row,
+.theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.state-row span,
+.theme-row span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.state-row strong {
+  color: var(--accent);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.state-detail {
+  min-height: 33px;
+  margin: 5px 0 13px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.primary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.primary-actions button,
+.secondary-actions button {
+  min-height: 36px;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+
+.theme-row {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.theme-row select {
+  width: 174px;
+  min-height: 34px;
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 9px;
+}
+
+footer kbd {
+  font-size: 8px;
+}
+
+#error {
+  margin: 0 14px 14px;
+  padding: 9px 10px;
+  border-left: 3px solid var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+  font-size: 10px;
+}

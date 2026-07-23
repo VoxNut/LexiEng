@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiEng reader harness</title>
+    <link rel="stylesheet" href="/dist/styles/content.css" />
+    <style>
+      body { max-width: 760px; margin: 60px auto; padding: 0 24px; font: 18px/1.7 Georgia, serif; }
+      h1 { font: 700 42px/1.1 system-ui, sans-serif; }
+      #add-paragraph { padding: 8px 12px; }
+    </style>
+    <script>
+      const runtimeListeners = [];
+      const messageLog = [];
+      const defaultSettings = {
+        theme: 'default',
+        ankiUrl: 'http://127.0.0.1:8765',
+        ankiDeck: 'English Mining',
+        ankiField: 'Word',
+        matureIntervalDays: 21,
+        knownFrequencyCeiling: 20000,
+        frequencyMin: 20001,
+        frequencyMax: 100000,
+        frequencyDictionaryId: '',
+        highlightUnranked: true,
+        parseDynamicContent: true,
+        showPopupOnHover: false,
+        popupWidth: 420,
+        popupHeight: 520,
+        statusBarEnabled: true,
+        statusBarAutoHide: false,
+        statusBarPosition: 'bottom',
+        massReviewNew: false,
+        massReviewDue: true,
+        massReviewLearning: true,
+        massReviewYoung: true,
+        massReviewMature: false,
+        massReviewRequireConfirm: false,
+        readerFontSize: 20,
+        readerWidth: 46,
+        readerLineHeight: 1.7
+      };
+
+      globalThis.chrome = {
+        runtime: {
+          getURL: (path) => `/dist/${path}`,
+          openOptionsPage: async () => undefined,
+          onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
+          sendMessage: async (message) => {
+            messageLog.push(message);
+            document.documentElement.dataset.lastRuntimeMessage = message.type;
+            if (message.type === 'reviewAnkiCards') {
+              document.documentElement.dataset.reviewCardIds = message.cardIds.join(',');
+            }
+            if (message.type === 'mineToAnki') {
+              document.documentElement.dataset.minedTerm = message.term;
+              document.documentElement.dataset.minedSentence = message.sentence || '';
+            }
+            if (message.type === 'tokenizeAndClassify') return classify(message.nodes);
+            if (message.type === 'lookup') return lookup(message.query);
+            if (message.type === 'setKnown') return { ok: true };
+            if (message.type === 'reviewAnkiCard') return { ok: true };
+            if (message.type === 'reviewAnkiCards') return [];
+            return { ok: true };
+          }
+        },
+        storage: {
+          local: {
+            get: async () => ({ settings: defaultSettings }),
+            set: async () => undefined
+          },
+          onChanged: { addListener: () => undefined }
+        }
+      };
+
+      globalThis.confirm = () => true;
+
+      function classify(nodes) {
+        const output = [];
+        nodes.forEach((text, nodeIndex) => {
+          for (const match of text.matchAll(/[A-Za-z]+(?:['’][A-Za-z]+)*/g)) {
+            const surface = match[0];
+            const normalized = surface.toLowerCase();
+            const knownFrequency = ['the', 'a', 'and', 'to', 'of'].includes(normalized);
+            const due = normalized === 'overdue';
+            const young = normalized === 'reviewed';
+            const learningState = due ? 'due' : young ? 'young' : knownFrequency ? 'frequency' : 'target';
+            output.push({
+              nodeIndex,
+              start: match.index,
+              end: match.index + surface.length,
+              surface,
+              normalized,
+              candidates: [normalized],
+              state: due || young ? 'known-anki' : knownFrequency ? 'known-frequency' : 'target',
+              learningState,
+              frequencyRank: knownFrequency ? 100 : 25000,
+              hasDefinition: true,
+              matched: normalized,
+              ankiCardIds: due ? [202] : young ? [101] : []
+            });
+          }
+        });
+        return output;
+      }
+
+      function lookup(query) {
+        const normalized = query.toLowerCase();
+        const cardId = normalized === 'overdue' ? 202 : normalized === 'reviewed' ? 101 : 0;
+        return {
+          query,
+          normalized,
+          matched: normalized,
+          frequencyRank: 25000,
+          knownSources: cardId ? ['anki'] : [],
+          knownByFrequency: false,
+          ankiCards: cardId ? [{
+            cardId,
+            noteId: cardId + 1000,
+            normalized,
+            surface: query,
+            deckName: 'English Mining',
+            modelName: 'English Mining',
+            state: normalized === 'overdue' ? 'due' : 'review',
+            intervalDays: normalized === 'overdue' ? 3 : 14,
+            reps: 12,
+            lapses: 1,
+            due: 0,
+            updatedAt: Date.now()
+          }] : [],
+          ipa: [{ ipa: '/ˈriː.dɚ/', tags: ['General American'], dictionaryTitle: 'OALD IPA' }],
+          entries: [{
+            dictionaryId: 'cambridge',
+            dictionaryTitle: 'Cambridge Dictionary',
+            dictionaryRevision: '1.0.0',
+            headword: normalized,
+            normalized,
+            lookupKeys: [normalized],
+            reading: '',
+            definitionTags: '',
+            rules: '',
+            score: 100,
+            glossary: [`A local dictionary definition for ${normalized}.`],
+            sequence: 1,
+            termTags: ''
+          }]
+        };
+      }
+
+      globalThis.lexiengHarness = {
+        messageLog,
+        send(message) {
+          return new Promise((resolve, reject) => {
+            const handled = runtimeListeners.some((listener) =>
+              listener(message, {}, (response) => {
+                if (response?.error) reject(new Error(response.error));
+                else resolve(response);
+              })
+            );
+            if (!handled) reject(new Error(`No listener handled ${message.type}`));
+          });
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <main>
+      <article>
+        <h1>Reading with LexiEng</h1>
+        <p>The careful reader notices an overdue word and a reviewed word while exploring unfamiliar vocabulary.</p>
+        <p>LexiEng keeps the page readable, opens definitions at the word, and lets Anki schedule every review.</p>
+      </article>
+      <button id="add-paragraph" type="button">Add dynamic paragraph</button>
+    </main>
+    <script>
+      document.getElementById('add-paragraph').addEventListener('click', () => {
+        const paragraph = document.createElement('p');
+        paragraph.id = 'dynamic-paragraph';
+        paragraph.textContent = 'Dynamic vocabulary appears after parsing.';
+        document.querySelector('article').append(paragraph);
+      });
+    </script>
+    <script src="/dist/content.js"></script>
+  </body>
+</html>

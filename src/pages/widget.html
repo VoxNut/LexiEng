@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiEng</title>
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/widget.css" />
+  </head>
+  <body>
+    <header>
+      <span class="brand-mark" aria-hidden="true">Lx</span>
+      <div>
+        <strong>LexiEng</strong>
+        <span id="page-title">Current page</span>
+      </div>
+      <button id="open-options" class="icon-button" type="button" title="Settings">Settings</button>
+    </header>
+
+    <main>
+      <div class="state-row">
+        <span>Reading coverage</span>
+        <strong id="coverage">Not parsed</strong>
+      </div>
+      <div class="state-detail" id="state-detail">Point at a word and press Q, or parse the page.</div>
+
+      <div class="primary-actions">
+        <button id="parse-page" class="primary-button" type="button">Parse page</button>
+        <button id="parse-selection" class="secondary-button" type="button">Parse selection</button>
+      </div>
+      <div class="secondary-actions">
+        <button id="reader-mode" class="secondary-button" type="button">Reader mode</button>
+        <button id="toggle-status" class="secondary-button" type="button">Status bar</button>
+        <button id="clear-page" class="secondary-button" type="button">Clear</button>
+      </div>
+
+      <label class="theme-row">
+        <span>Theme</span>
+        <select id="theme">
+          <option value="default">Default</option>
+          <option value="sepia">Sepia</option>
+          <option value="rose-pine">Rosé Pine</option>
+          <option value="nord">Nord</option>
+          <option value="catppuccin-mocha">Catppuccin Mocha</option>
+          <option value="monochrome">Monochrome</option>
+        </select>
+      </label>
+    </main>
+
+    <footer>
+      <span><kbd>Q</kbd> dictionary</span>
+      <span><kbd>Alt+P</kbd> parse</span>
+      <span><kbd>Alt+H</kbd> reader</span>
+    </footer>
+    <div id="error" role="status" hidden></div>
+    <script type="module" src="../widget.js"></script>
+  </body>
+</html>

@@ -22,6 +22,9 @@
         <a href="#dictionaries">Dictionaries</a>
         <a href="#anki">Anki knowledge</a>
         <a href="#frequency">Frequency filter</a>
+        <a href="#reading">Reading behavior</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#reader">Reader mode</a>
         <a href="#appearance">Appearance</a>
       </nav>
 
@@ -64,7 +67,7 @@
         <section id="anki" class="settings-section">
           <span class="eyebrow">Known-word source</span>
           <h2>Anki knowledge</h2>
-          <p>With Anki open and AnkiConnect installed, LexiEng reads headwords and card schedules from your mining deck. It changes a card’s schedule only when you deliberately choose Again, Hard, Good, or Easy in a lookup popup; it never edits or deletes notes.</p>
+          <p>With Anki open and AnkiConnect installed, LexiEng reads headwords and card schedules from your mining deck. It changes a schedule only when you deliberately grade a card. <strong>Add to Anki</strong> creates a new note when clicked; LexiEng never edits or deletes existing notes.</p>
 
           <div class="form-grid">
             <label>
@@ -82,12 +85,21 @@
                 <option value="">Detect automatically</option>
               </select>
             </label>
+            <label>
+              <span>Note type for mining</span>
+              <input id="anki-model" type="text" list="anki-models" placeholder="Detect from deck when empty" />
+              <datalist id="anki-models"></datalist>
+            </label>
+            <label><span>Meaning field</span><input id="anki-meaning-field" type="text" value="Meaning" /></label>
+            <label><span>Sentence field</span><input id="anki-sentence-field" type="text" value="Sentence" /></label>
+            <label><span>IPA field</span><input id="anki-ipa-field" type="text" value="IPA" /></label>
+            <label><span>Frequency field</span><input id="anki-frequency-field" type="text" value="Frequency" /></label>
           </div>
           <div class="button-row">
             <button id="test-anki" class="secondary-button" type="button">Test connection</button>
             <button id="sync-anki" class="primary-button" type="button">Sync words + schedules</button>
           </div>
-          <div id="anki-status" class="inline-status" role="status">Not synced yet</div>
+          <div id="anki-status" class="inline-status" role="status">Not synced yet. Popup mining fills fields that exist on the selected note type and leaves the others untouched.</div>
         </section>
 
         <section id="frequency" class="settings-section">
@@ -119,6 +131,80 @@
             <span><strong>Include words without a frequency rank</strong><small>Useful for technical terms and proper vocabulary not covered by a list.</small></span>
           </label>
           <button id="save-frequency" class="primary-button" type="button">Save filter</button>
+        </section>
+
+        <section id="reading" class="settings-section">
+          <span class="eyebrow">Jiten-style page workflow</span>
+          <h2>Reading behavior</h2>
+          <p>Parsed tokens stay in the page. Press <kbd>Q</kbd> over any word for the dictionary, <kbd>Alt+P</kbd> to parse, <kbd>Alt+L</kbd> to look up a selection, <kbd>Alt+H</kbd> for reader mode, and <kbd>Alt+S</kbd> for the status bar.</p>
+
+          <div class="check-grid">
+            <label class="check-row">
+              <input id="parse-dynamic-content" type="checkbox" checked />
+              <span><strong>Parse new page content</strong><small>Observe text added by article readers, subtitles, and single-page apps after the first parse.</small></span>
+            </label>
+            <label class="check-row">
+              <input id="show-popup-on-hover" type="checkbox" />
+              <span><strong>Open popup on hover</strong><small>Off by default. Q and click always work.</small></span>
+            </label>
+            <label class="check-row">
+              <input id="status-bar-enabled" type="checkbox" checked />
+              <span><strong>Enable in-page status bar</strong><small>Coverage, word states, reader controls, and mass review stay on the page.</small></span>
+            </label>
+            <label class="check-row">
+              <input id="status-bar-auto-hide" type="checkbox" />
+              <span><strong>Auto-hide status bar</strong><small>Collapse to the small Lx button after a short delay.</small></span>
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Status bar position</span>
+              <select id="status-bar-position"><option value="bottom">Bottom</option><option value="top">Top</option></select>
+            </label>
+            <label>
+              <span>Mature interval</span>
+              <input id="mature-interval-days" type="number" min="1" max="3650" value="21" />
+              <small>Anki review cards at or above this interval are Mature.</small>
+            </label>
+            <label>
+              <span>Popup width</span>
+              <input id="popup-width" type="number" min="280" max="900" value="420" />
+            </label>
+            <label>
+              <span>Popup height cap</span>
+              <input id="popup-height" type="number" min="220" max="900" value="520" />
+            </label>
+          </div>
+          <button id="save-reading" class="primary-button" type="button">Save reading behavior</button>
+        </section>
+
+        <section id="reviews" class="settings-section">
+          <span class="eyebrow">Anki scheduler</span>
+          <h2>On-page reviews</h2>
+          <p>The dictionary popup uses Anki’s own Again, Hard, Good, and Easy actions. If FSRS is enabled in Anki, these are FSRS reviews. Keys <kbd>1</kbd>–<kbd>4</kbd> grade the first reviewable card while the popup is open.</p>
+
+          <div class="check-grid">
+            <label class="check-row"><input id="mass-review-new" type="checkbox" checked /><span><strong>Include New</strong><small>Include visible new cards in the status-bar Review action.</small></span></label>
+            <label class="check-row"><input id="mass-review-due" type="checkbox" checked /><span><strong>Include Due</strong><small>Review visible cards Anki currently marks due.</small></span></label>
+            <label class="check-row"><input id="mass-review-learning" type="checkbox" checked /><span><strong>Include Learning</strong><small>Include cards in learning or relearning steps.</small></span></label>
+            <label class="check-row"><input id="mass-review-young" type="checkbox" /><span><strong>Include Young</strong><small>Usually left off to avoid pushing non-due reviews farther out.</small></span></label>
+            <label class="check-row"><input id="mass-review-mature" type="checkbox" /><span><strong>Include Mature</strong><small>Usually left off to avoid unnecessary reviews.</small></span></label>
+            <label class="check-row"><input id="mass-review-confirm" type="checkbox" checked /><span><strong>Confirm mass review</strong><small>Ask before grading every eligible visible card as Good.</small></span></label>
+          </div>
+          <button id="save-reviews" class="primary-button" type="button">Save review filters</button>
+        </section>
+
+        <section id="reader" class="settings-section">
+          <span class="eyebrow">Focused reading</span>
+          <h2>Reader mode</h2>
+          <p>LexiEng extracts the largest readable article region into a clean, full-page view and immediately parses it. The configured extension theme is reused.</p>
+          <div class="form-grid">
+            <label><span>Font size</span><input id="reader-font-size" type="number" min="12" max="40" value="20" /></label>
+            <label><span>Column width (rem)</span><input id="reader-width" type="number" min="24" max="90" value="46" /></label>
+            <label><span>Line height</span><input id="reader-line-height" type="number" min="1.1" max="2.6" step="0.05" value="1.7" /></label>
+          </div>
+          <button id="save-reader" class="primary-button" type="button">Save reader layout</button>
         </section>
 
         <section id="appearance" class="settings-section">

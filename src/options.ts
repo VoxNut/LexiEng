@@ -48,7 +48,12 @@ const importProgress = requiredElement<HTMLProgressElement>('import-progress');
 const dictionaryList = requiredElement<HTMLElement>('dictionary-list');
 const ankiUrl = requiredElement<HTMLInputElement>('anki-url');
 const ankiDeck = requiredElement<HTMLInputElement>('anki-deck');
+const ankiModel = requiredElement<HTMLInputElement>('anki-model');
 const ankiField = requiredElement<HTMLSelectElement>('anki-field');
+const ankiMeaningField = requiredElement<HTMLInputElement>('anki-meaning-field');
+const ankiSentenceField = requiredElement<HTMLInputElement>('anki-sentence-field');
+const ankiIpaField = requiredElement<HTMLInputElement>('anki-ipa-field');
+const ankiFrequencyField = requiredElement<HTMLInputElement>('anki-frequency-field');
 const ankiStatus = requiredElement<HTMLElement>('anki-status');
 const testAnkiButton = requiredElement<HTMLButtonElement>('test-anki');
 const syncAnkiButton = requiredElement<HTMLButtonElement>('sync-anki');
@@ -57,6 +62,23 @@ const knownFrequencyCeiling = requiredElement<HTMLInputElement>('known-frequency
 const frequencyMin = requiredElement<HTMLInputElement>('frequency-min');
 const frequencyMax = requiredElement<HTMLInputElement>('frequency-max');
 const highlightUnranked = requiredElement<HTMLInputElement>('highlight-unranked');
+const parseDynamicContent = requiredElement<HTMLInputElement>('parse-dynamic-content');
+const showPopupOnHover = requiredElement<HTMLInputElement>('show-popup-on-hover');
+const statusBarEnabled = requiredElement<HTMLInputElement>('status-bar-enabled');
+const statusBarAutoHide = requiredElement<HTMLInputElement>('status-bar-auto-hide');
+const statusBarPosition = requiredElement<HTMLSelectElement>('status-bar-position');
+const matureIntervalDays = requiredElement<HTMLInputElement>('mature-interval-days');
+const popupWidth = requiredElement<HTMLInputElement>('popup-width');
+const popupHeight = requiredElement<HTMLInputElement>('popup-height');
+const massReviewNew = requiredElement<HTMLInputElement>('mass-review-new');
+const massReviewDue = requiredElement<HTMLInputElement>('mass-review-due');
+const massReviewLearning = requiredElement<HTMLInputElement>('mass-review-learning');
+const massReviewYoung = requiredElement<HTMLInputElement>('mass-review-young');
+const massReviewMature = requiredElement<HTMLInputElement>('mass-review-mature');
+const massReviewConfirm = requiredElement<HTMLInputElement>('mass-review-confirm');
+const readerFontSize = requiredElement<HTMLInputElement>('reader-font-size');
+const readerWidth = requiredElement<HTMLInputElement>('reader-width');
+const readerLineHeight = requiredElement<HTMLInputElement>('reader-line-height');
 const globalStatus = requiredElement<HTMLElement>('global-status');
 
 let dictionaries: DictionaryRecord[] = [];
@@ -101,6 +123,9 @@ dropZone.addEventListener('keydown', (event) => {
 testAnkiButton.addEventListener('click', () => void testAnkiConnection());
 syncAnkiButton.addEventListener('click', () => void syncAnki());
 requiredElement<HTMLButtonElement>('save-frequency').addEventListener('click', () => void saveFrequency());
+requiredElement<HTMLButtonElement>('save-reading').addEventListener('click', () => void saveReading());
+requiredElement<HTMLButtonElement>('save-reviews').addEventListener('click', () => void saveReviews());
+requiredElement<HTMLButtonElement>('save-reader').addEventListener('click', () => void saveReader());
 
 for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="theme"]')) {
   radio.addEventListener('change', () => {
@@ -124,12 +149,34 @@ async function initialize(): Promise<void> {
 function populateSettings(settings: Settings): void {
   ankiUrl.value = settings.ankiUrl;
   ankiDeck.value = settings.ankiDeck;
+  ankiModel.value = settings.ankiModel;
   ankiField.dataset.savedValue = settings.ankiField;
+  ankiMeaningField.value = settings.ankiMeaningField;
+  ankiSentenceField.value = settings.ankiSentenceField;
+  ankiIpaField.value = settings.ankiIpaField;
+  ankiFrequencyField.value = settings.ankiFrequencyField;
   knownFrequencyCeiling.value = String(settings.knownFrequencyCeiling);
   frequencyMin.value = String(settings.frequencyMin);
   frequencyMax.value = String(settings.frequencyMax);
   frequencyDictionary.value = settings.frequencyDictionaryId;
   highlightUnranked.checked = settings.highlightUnranked;
+  parseDynamicContent.checked = settings.parseDynamicContent;
+  showPopupOnHover.checked = settings.showPopupOnHover;
+  statusBarEnabled.checked = settings.statusBarEnabled;
+  statusBarAutoHide.checked = settings.statusBarAutoHide;
+  statusBarPosition.value = settings.statusBarPosition;
+  matureIntervalDays.value = String(settings.matureIntervalDays);
+  popupWidth.value = String(settings.popupWidth);
+  popupHeight.value = String(settings.popupHeight);
+  massReviewNew.checked = settings.massReviewNew;
+  massReviewDue.checked = settings.massReviewDue;
+  massReviewLearning.checked = settings.massReviewLearning;
+  massReviewYoung.checked = settings.massReviewYoung;
+  massReviewMature.checked = settings.massReviewMature;
+  massReviewConfirm.checked = settings.massReviewRequireConfirm;
+  readerFontSize.value = String(settings.readerFontSize);
+  readerWidth.value = String(settings.readerWidth);
+  readerLineHeight.value = String(settings.readerLineHeight);
   document.querySelector<HTMLInputElement>(`input[name="theme"][value="${settings.theme}"]`)?.click();
 }
 
@@ -317,7 +364,7 @@ async function testAnkiConnection(): Promise<void> {
   try {
     const settings = await saveAnkiSettings();
     const inspection = await inspectAnki(settings.ankiUrl, settings.ankiDeck);
-    populateAnkiChoices(inspection.decks, inspection.fields, settings.ankiField);
+    populateAnkiChoices(inspection.decks, inspection.models, inspection.fields, settings.ankiField);
     const deckMessage = inspection.decks.includes(settings.ankiDeck)
       ? `${formatNumber(inspection.noteCount)} notes found in ${settings.ankiDeck}`
       : `Connected, but “${settings.ankiDeck}” was not found`;
@@ -359,13 +406,25 @@ async function saveAnkiSettings(): Promise<Settings> {
   return saveSettings({
     ankiUrl: ankiUrl.value.trim(),
     ankiDeck: ankiDeck.value.trim(),
+    ankiModel: ankiModel.value.trim(),
     ankiField: ankiField.value,
+    ankiMeaningField: ankiMeaningField.value.trim(),
+    ankiSentenceField: ankiSentenceField.value.trim(),
+    ankiIpaField: ankiIpaField.value.trim(),
+    ankiFrequencyField: ankiFrequencyField.value.trim(),
   });
 }
 
-function populateAnkiChoices(decks: string[], fields: string[], savedField: string): void {
+function populateAnkiChoices(
+  decks: string[],
+  models: string[],
+  fields: string[],
+  savedField: string,
+): void {
   const deckList = requiredElement<HTMLDataListElement>('anki-decks');
+  const modelList = requiredElement<HTMLDataListElement>('anki-models');
   deckList.replaceChildren(...decks.map((deck) => new Option(deck)));
+  modelList.replaceChildren(...models.map((model) => new Option(model)));
   ankiField.replaceChildren(new Option('Detect automatically', ''));
   for (const field of fields) ankiField.append(new Option(field, field));
   if (savedField && fields.includes(savedField)) ankiField.value = savedField;
@@ -391,6 +450,41 @@ async function saveFrequency(): Promise<void> {
   );
 }
 
+async function saveReading(): Promise<void> {
+  await saveSettings({
+    parseDynamicContent: parseDynamicContent.checked,
+    showPopupOnHover: showPopupOnHover.checked,
+    statusBarEnabled: statusBarEnabled.checked,
+    statusBarAutoHide: statusBarAutoHide.checked,
+    statusBarPosition: statusBarPosition.value === 'top' ? 'top' : 'bottom',
+    matureIntervalDays: integerValue(matureIntervalDays, 21),
+    popupWidth: integerValue(popupWidth, 420),
+    popupHeight: integerValue(popupHeight, 520),
+  });
+  setGlobalStatus('Reading behavior saved', 'success');
+}
+
+async function saveReviews(): Promise<void> {
+  await saveSettings({
+    massReviewNew: massReviewNew.checked,
+    massReviewDue: massReviewDue.checked,
+    massReviewLearning: massReviewLearning.checked,
+    massReviewYoung: massReviewYoung.checked,
+    massReviewMature: massReviewMature.checked,
+    massReviewRequireConfirm: massReviewConfirm.checked,
+  });
+  setGlobalStatus('Review filters saved', 'success');
+}
+
+async function saveReader(): Promise<void> {
+  await saveSettings({
+    readerFontSize: Number(readerFontSize.value),
+    readerWidth: Number(readerWidth.value),
+    readerLineHeight: Number(readerLineHeight.value),
+  });
+  setGlobalStatus('Reader layout saved', 'success');
+}
+
 async function refreshSummary(): Promise<void> {
   const stats = await getStorageStats();
   setText('dictionary-count', formatNumber(stats.dictionaries));
@@ -408,6 +502,11 @@ function setAnkiBusy(busy: boolean): void {
   ankiUrl.disabled = busy;
   ankiDeck.disabled = busy;
   ankiField.disabled = busy;
+  ankiModel.disabled = busy;
+  ankiMeaningField.disabled = busy;
+  ankiSentenceField.disabled = busy;
+  ankiIpaField.disabled = busy;
+  ankiFrequencyField.disabled = busy;
 }
 
 function setAnkiStatus(text: string, state: 'working' | 'success' | 'error'): void {

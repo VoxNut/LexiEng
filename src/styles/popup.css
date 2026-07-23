@@ -1,124 +1,54 @@
-body {
-  min-width: 300px;
-  min-height: 100vh;
+:host {
+  all: initial;
 }
 
-.panel-header {
-  position: sticky;
-  z-index: 3;
-  top: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 15px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+[hidden] {
+  display: none !important;
 }
 
-.panel-header h1,
-.panel-header p {
-  margin: 0;
-  line-height: 1.2;
-}
-
-.panel-header h1 {
-  font-size: 15px;
-  letter-spacing: -0.02em;
-}
-
-.panel-header p {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-main {
-  padding: 13px;
-}
-
-.scan-card,
-.lookup-section {
-  margin-bottom: 12px;
-  padding: 16px;
+.lexieng-popup-shell {
+  box-sizing: border-box;
+  position: relative;
+  max-width: calc(100vw - 20px);
+  overflow: auto;
+  padding: 15px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-}
-
-.coverage-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 15px 0;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.coverage-grid div {
-  min-width: 0;
-  padding: 11px 8px;
-  border-right: 1px solid var(--border);
-  text-align: center;
-  background: var(--bg);
-}
-
-.coverage-grid div:last-child {
-  border-right: 0;
-}
-
-.coverage-grid strong,
-.coverage-grid span {
-  display: block;
-}
-
-.coverage-grid strong {
-  overflow: hidden;
-  font-size: 17px;
-  font-variant-numeric: tabular-nums;
-  text-overflow: ellipsis;
-}
-
-.coverage-grid span {
-  color: var(--muted);
-  font-size: 9px;
-  text-transform: uppercase;
-}
-
-.scan-card .button-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.hint {
-  margin: 11px 0 0;
-  color: var(--muted);
-  font-size: 10px;
-  text-align: center;
-}
-
-.lookup-section {
-  min-height: 280px;
-}
-
-.search-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 7px;
-  margin: 15px 0;
-}
-
-.empty-state {
-  display: grid;
-  gap: 5px;
-  padding: 32px 18px;
-  border: 1px dashed var(--border);
-  border-radius: 7px;
-  color: var(--muted);
-  text-align: center;
-}
-
-.empty-state strong {
+  border-radius: 9px;
   color: var(--text);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font: 14px/1.5 "Inter", system-ui, sans-serif;
+}
+
+.lexieng-popup-close {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  float: right;
+  min-height: 28px;
+  margin: 0 0 5px 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--muted);
+  background: var(--surface);
+  font: 600 10px/1 "Inter", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.lexieng-popup-close:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.lexieng-popup-results {
+  clear: both;
+}
+
+.lexieng-popup-loading {
+  padding: 28px;
+  color: var(--muted);
+  text-align: center;
 }
 
 .lookup-header {
@@ -165,10 +95,32 @@ main {
   font-size: 11px;
 }
 
+.known-line button,
+.anki-grade {
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
 .known-line button {
   min-height: 30px;
   padding: 4px 9px;
-  font-size: 10px;
+  font: 600 10px/1 "Inter", system-ui, sans-serif;
+}
+
+.known-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.known-actions .primary-button {
+  color: color-mix(in srgb, var(--surface) 92%, white);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .anki-review-panel {
@@ -245,14 +197,10 @@ main {
 .anki-grade {
   display: grid;
   min-width: 0;
-  min-height: 42px;
+  min-height: 44px;
   align-content: center;
   gap: 1px;
   padding: 5px 3px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  background: var(--surface);
   text-align: center;
 }
 
@@ -273,6 +221,17 @@ main {
   font-size: 10px;
   text-overflow: ellipsis;
 }
+
+.anki-grade strong::before {
+  display: block;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.anki-grade-1 strong::before { content: "1"; }
+.anki-grade-2 strong::before { content: "2"; }
+.anki-grade-3 strong::before { content: "3"; }
+.anki-grade-4 strong::before { content: "4"; }
 
 .anki-grade span {
   overflow: hidden;
@@ -296,9 +255,6 @@ main {
 }
 
 .dictionary-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin-bottom: 8px;
   color: var(--muted);
   font-size: 10px;
@@ -339,17 +295,20 @@ main {
   cursor: pointer;
 }
 
+.empty-state,
 .lookup-error {
   padding: 18px;
-  color: var(--danger);
-  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border: 1px solid var(--border);
   border-radius: 7px;
-  background: var(--danger-soft);
 }
 
-@media (max-width: 340px) {
-  .scan-card .button-row,
-  .search-form {
-    grid-template-columns: 1fr;
-  }
+.empty-state {
+  color: var(--muted);
+  text-align: center;
+}
+
+.lookup-error {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: var(--danger-soft);
 }

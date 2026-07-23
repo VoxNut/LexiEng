@@ -1,6 +1,6 @@
 {
   "name": "lexieng",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A local-first English immersion reader with Rust-powered Yomitan lookup and Anki scheduler reviews.",
   "private": true,
   "type": "module",

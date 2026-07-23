@@ -376,6 +376,12 @@ progress::-webkit-progress-value {
   cursor: pointer;
 }
 
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
 .check-row input {
   margin-top: 4px;
   accent-color: var(--accent);
@@ -472,6 +478,7 @@ progress::-webkit-progress-value {
 
   .summary-grid,
   .form-grid,
+  .check-grid,
   .theme-grid {
     grid-template-columns: 1fr;
   }
