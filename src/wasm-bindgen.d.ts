@@ -1,4 +1,4 @@
-declare module '*lexijap_core.js' {
+declare module '*lexieng_core.js' {
   export default function init(options?: {
     module_or_path: string | URL | Request | BufferSource | WebAssembly.Module;
   }): Promise<WebAssembly.Exports>;

@@ -17,15 +17,15 @@ await mkdir(generatedDir, { recursive: true });
 
 execFileSync(
   'cargo',
-  ['build', '--package', 'lexijap-core', '--target', 'wasm32-unknown-unknown', ...(isDev ? [] : ['--release'])],
+  ['build', '--package', 'lexieng-core', '--target', 'wasm32-unknown-unknown', ...(isDev ? [] : ['--release'])],
   { cwd: root, stdio: 'inherit' },
 );
 
 const profile = isDev ? 'debug' : 'release';
-const wasmInput = path.join(root, 'target', 'wasm32-unknown-unknown', profile, 'lexijap_core.wasm');
+const wasmInput = path.join(root, 'target', 'wasm32-unknown-unknown', profile, 'lexieng_core.wasm');
 execFileSync(
   'wasm-bindgen',
-  [wasmInput, '--target', 'web', '--out-dir', generatedDir, '--out-name', 'lexijap_core', '--no-typescript'],
+  [wasmInput, '--target', 'web', '--out-dir', generatedDir, '--out-name', 'lexieng_core', '--no-typescript'],
   { cwd: root, stdio: 'inherit' },
 );
 
@@ -81,8 +81,8 @@ await Promise.all([
   cp(path.join(root, 'PRIVACY.md'), path.join(outDir, 'PRIVACY.md')),
   cp(path.join(root, 'LICENSES'), path.join(outDir, 'LICENSES'), { recursive: true }),
   cp(
-    path.join(generatedDir, 'lexijap_core_bg.wasm'),
-    path.join(outDir, 'wasm', 'lexijap_core_bg.wasm'),
+    path.join(generatedDir, 'lexieng_core_bg.wasm'),
+    path.join(outDir, 'wasm', 'lexieng_core_bg.wasm'),
     { recursive: true },
   ),
 ]);

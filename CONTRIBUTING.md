@@ -1,6 +1,6 @@
-# Contributing to LexiJap
+# Contributing to LexiEng
 
-Thanks for helping improve LexiJap. Small, reviewable changes with a clear performance or learning benefit are preferred.
+Thanks for helping improve LexiEng. Small, reviewable changes with a clear performance or learning benefit are preferred.
 
 ## Development setup
 

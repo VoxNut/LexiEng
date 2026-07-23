@@ -1,19 +1,22 @@
-# LexiJap
+# LexiEng
 
-LexiJap is a fast, local-first English immersion reader for Chrome and Microsoft Edge. It brings together your own Yomitan/Yomichan dictionaries, the words already in your Anki mining deck, and frequency-rank filtering so familiar vocabulary stays out of the way.
+LexiEng is a fast, local-first English immersion reader for Chrome and Microsoft Edge. It brings together your own Yomitan/Yomichan dictionaries, the words already in your Anki mining deck, and frequency-rank filtering so familiar vocabulary stays out of the way.
 
-![LexiJap settings](docs/settings-preview.png)
+![LexiEng settings](docs/settings-preview.png)
 
-The workflow is inspired by [JitenReader](https://github.com/Sirush/JitenReader), but LexiJap is an independent English-focused implementation. Its parsing and dictionary core is written in Rust and compiled to WebAssembly.
+The workflow is inspired by [JitenReader](https://github.com/Sirush/JitenReader), but LexiEng is an independent English-focused implementation. Its parsing and dictionary core is written in Rust and compiled to WebAssembly.
 
 ## What it does
 
 - Imports multiple Yomitan/Yomichan ZIP dictionaries in one queue.
 - Preserves plain and structured definitions, IPA metadata, and frequency metadata.
-- Syncs known terms from every note in an Anki deck through AnkiConnect. The default deck is `English Mining`.
+- Syncs known terms and per-card scheduling snapshots from an Anki deck through AnkiConnect. The default deck is `English Mining`.
 - Auto-detects common fields such as `Word`, `Expression`, `Term`, `Vocabulary`, and `Front`, or lets you choose a field explicitly.
 - Excludes frequency ranks 1–20,000 by default, with editable minimum and maximum target ranks.
-- Scans a page only when requested, marks target vocabulary, and shows definitions on click or Shift-hover.
+- Opens the local dictionary for the word under the pointer with `Q`, even before a page scan.
+- Scans a page only when requested and marks target vocabulary for click or Shift-hover lookup; `Q` remains available for every other word.
+- Shows Anki card state, current interval, reviews, lapses, and the four next intervals calculated by Anki’s active scheduler (including FSRS).
+- Sends deliberate Again, Hard, Good, or Easy grades through Anki’s own scheduler.
 - Provides a persistent Chromium side panel for lookup and reading coverage.
 - Keeps manual known-word overrides without changing Anki notes.
 - Includes Default, Sepia, Rosé Pine, Nord, Catppuccin Mocha, and Monochrome themes.
@@ -22,12 +25,12 @@ The workflow is inspired by [JitenReader](https://github.com/Sirush/JitenReader)
 
 ## Install from a release
 
-1. Download `lexijap-v*-chromium.zip` from the [releases page](https://github.com/VoxNut/lexijap/releases).
+1. Download `lexieng-v*-chromium.zip` from the [releases page](https://github.com/VoxNut/LexiEng/releases).
 2. Extract it to a permanent folder.
 3. Open `chrome://extensions/` in Chrome or `edge://extensions/` in Edge.
 4. Enable **Developer mode**.
 5. Choose **Load unpacked** and select the extracted folder containing `manifest.json`.
-6. Pin LexiJap and click its toolbar icon to open the side panel.
+6. Pin LexiEng and click its toolbar icon to open the side panel.
 
 Chrome or Edge 116 and newer are supported.
 
@@ -35,7 +38,7 @@ Chrome or Edge 116 and newer are supported.
 
 ### 1. Import dictionaries
 
-Open LexiJap settings and drag all of your dictionary ZIPs onto the Dictionaries section. The importer accepts standard Yomitan formats 3 and 4 and detects content by archive structure, not filename.
+Open LexiEng settings and drag all of your dictionary ZIPs onto the Dictionaries section. The importer accepts standard Yomitan formats 3 and 4 and detects content by archive structure, not filename.
 
 It supports the structures used by:
 
@@ -61,9 +64,9 @@ Large collections can contain millions of entries and take several minutes to im
 2. Leave the endpoint at `http://127.0.0.1:8765` unless your AnkiConnect configuration uses another URL.
 3. Enter `English Mining` or select another discovered deck.
 4. Test the connection and choose the field containing the headword. **Detect automatically** prefers a field named `Word`.
-5. Choose **Sync English Mining**.
+5. Choose **Sync words + schedules**.
 
-Sync is read-only with respect to Anki: LexiJap calls `findNotes` and `notesInfo`, then replaces only its local `anki` known-word source. Manual known words remain intact. If AnkiConnect rejects the extension origin, add the installed `chrome-extension://<extension-id>` origin to AnkiConnect's `webCorsOriginList` and restart Anki.
+Sync reads `findCards` and `cardsInfo`, then replaces only LexiEng’s local Anki snapshot. Manual known words remain intact. A lookup’s review buttons call AnkiConnect’s `answerCards` only after you click a grade; the resulting interval is calculated and stored by Anki’s active scheduler. LexiEng never edits or deletes notes. If AnkiConnect rejects the extension origin, add the installed `chrome-extension://<extension-id>` origin to AnkiConnect's `webCorsOriginList` and restart Anki.
 
 ### 3. Set the frequency range
 
@@ -76,17 +79,18 @@ The defaults are:
 | Target end | 100,000 | Last rank eligible for marking |
 | Unranked words | Included | Technical and uncovered vocabulary can still be marked |
 
-Anki and manual known-word status always win over the frequency range. When several frequency dictionaries are enabled, choose one explicitly or let LexiJap use the best available rank.
+Anki and manual known-word status always win over the frequency range. When several frequency dictionaries are enabled, choose one explicitly or let LexiEng use the best available rank.
 
 ## Reading workflow
 
 1. Open a normal web page.
-2. Click **Scan page** in the LexiJap side panel, use the page context menu, or press `Alt+Shift+L`.
-3. Click a marked word, or hold Shift while hovering it, to see local definitions, IPA, and frequency.
-4. Mark a word known manually when needed.
-5. Choose **Clear marks** before editing a highly interactive page.
+2. Point at a word and press `Q` to open its local definitions, IPA, frequency, Anki state, and review controls. This works without scanning first.
+3. To mark all target vocabulary, click **Scan page** in the side panel, use the page context menu, or press `Alt+Shift+L`.
+4. Click a parsed word, or hold Shift while hovering it, to open the same popup.
+5. If the word has an Anki card, choose Again, Hard, Good, or Easy to review it through Anki’s scheduler.
+6. Mark a word known manually when needed, or choose **Clear marks** before editing a highly interactive page.
 
-LexiJap deliberately avoids automatic page scanning. This reduces startup work, prevents background CPU use, and gives you control over DOM changes.
+LexiEng deliberately avoids automatic full-page scanning. The `Q` lookup examines only the word at the pointer; a scan remains an explicit action. This reduces startup work, prevents background CPU use, and gives you control over DOM changes.
 
 ## Build from source
 
@@ -121,13 +125,13 @@ Web page content script
         ▼
 Manifest V3 service worker ── Rust/WASM tokenizer + inflection candidates
         │
-        ├── IndexedDB: dictionary terms, IPA/frequency metadata, known words
+        ├── IndexedDB: dictionary terms, IPA/frequency metadata, known words, Anki schedules
         ├── chrome.storage.local: small user settings
-        └── Side panel: lookup, coverage, manual known state
+        └── Side panel: lookup, coverage, manual known state, Anki review
 
 Settings page
         ├── Dedicated Rust/WASM ZIP worker ── bounded import batches ── IndexedDB
-        └── AnkiConnect on localhost ── read-only known-word synchronization
+        └── AnkiConnect on localhost ── card sync + user-triggered scheduler reviews
 ```
 
 JavaScript handles browser APIs, IndexedDB, safe DOM rendering, and UI. Rust handles Unicode tokenization, normalization, inflection candidates, ZIP decompression, Yomitan bank parsing, and frequency extraction.
@@ -147,7 +151,7 @@ npm run verify:dictionary -- path\to\dictionary.zip
 The importer has also been exercised against multi-million-row real-world English dictionary collections. An ignored Rust compatibility test can validate a local folder without committing dictionary data:
 
 ```powershell
-$env:LEXIJAP_DICTIONARY_DIR='D:\path\to\yomitan-zips'
+$env:LEXIENG_DICTIONARY_DIR='D:\path\to\yomitan-zips'
 cargo test --release validates_external_archive_directory -- --ignored --nocapture
 ```
 
@@ -159,4 +163,4 @@ See [PRIVACY.md](PRIVACY.md) for the complete policy and permission rationale. I
 
 Issues and focused pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing storage schemas or the Rust/JavaScript boundary.
 
-LexiJap is available under the [MIT License](LICENSE). The bundled Inter font is licensed separately under the [SIL Open Font License 1.1](LICENSES/Inter-OFL.txt).
+LexiEng is available under the [MIT License](LICENSE). The bundled Inter font is licensed separately under the [SIL Open Font License 1.1](LICENSES/Inter-OFL.txt).

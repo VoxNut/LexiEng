@@ -1,6 +1,6 @@
 import { renderLookupResult } from './shared/renderer';
 import { getSettings } from './shared/settings';
-import { ClassifiedToken, LookupResult, RuntimeRequest, ScanStats, Theme } from './shared/types';
+import { AnkiEase, ClassifiedToken, LookupResult, RuntimeRequest, ScanStats, Theme } from './shared/types';
 
 const EXCLUDED_SELECTOR = [
   'script',
@@ -17,9 +17,9 @@ const EXCLUDED_SELECTOR = [
   'canvas',
   '[contenteditable="true"]',
   '[aria-hidden="true"]',
-  '[data-lexijap-ignore]',
-  '.lexijap-word',
-  '#lexijap-popup-host',
+  '[data-lexieng-ignore]',
+  '.lexieng-word',
+  '#lexieng-popup-host',
 ].join(',');
 
 const MAX_TEXT_CHARACTERS = 300_000;
@@ -32,6 +32,12 @@ let marked = false;
 let popupHost: HTMLElement | undefined;
 let activeWord = '';
 let activeTheme: Theme = 'default';
+let hoveredWord: HTMLElement | undefined;
+let lastPointer: { x: number; y: number } | undefined;
+
+interface PopupAnchor {
+  getBoundingClientRect(): DOMRect;
+}
 
 chrome.runtime.onMessage.addListener(
   (message: RuntimeRequest, _sender, sendResponse: (response?: unknown) => void) => {
@@ -49,14 +55,29 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
+document.addEventListener('pointermove', (event) => {
+  lastPointer = { x: event.clientX, y: event.clientY };
+}, { passive: true });
+
 document.addEventListener('pointerover', (event) => {
-  if (!(event instanceof PointerEvent) || !event.shiftKey) return;
-  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('.lexijap-word') : null;
-  if (target) void openLookup(target);
+  if (!(event instanceof PointerEvent)) return;
+  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('.lexieng-word') : null;
+  hoveredWord = target ?? undefined;
+  if (target && event.shiftKey) void openLookup(target);
+});
+
+document.addEventListener('pointerout', (event) => {
+  if (!(event.target instanceof Element)) return;
+  const target = event.target.closest<HTMLElement>('.lexieng-word');
+  if (!target || target !== hoveredWord) return;
+  const related = event.relatedTarget instanceof Element
+    ? event.relatedTarget.closest<HTMLElement>('.lexieng-word')
+    : null;
+  if (related !== target) hoveredWord = undefined;
 });
 
 document.addEventListener('click', (event) => {
-  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('.lexijap-word') : null;
+  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('.lexieng-word') : null;
   if (!target) return;
   event.preventDefault();
   event.stopPropagation();
@@ -65,8 +86,30 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closePopup();
+  if (
+    event.code === 'KeyQ' &&
+    !event.repeat &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.metaKey &&
+    !isTypingContext(event.target)
+  ) {
+    const target = hoveredWord ?? (
+      document.activeElement instanceof Element
+        ? document.activeElement.closest<HTMLElement>('.lexieng-word') ?? undefined
+        : undefined
+    );
+    const fallback = target ? undefined : lookupAtPointerOrSelection();
+    if (target || fallback) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (target) void openLookup(target);
+      else if (fallback) void openLookupWord(fallback.word, fallback.anchor);
+    }
+    return;
+  }
   if ((event.key === 'Enter' || event.key === ' ') && event.target instanceof HTMLElement) {
-    const target = event.target.closest<HTMLElement>('.lexijap-word');
+    const target = event.target.closest<HTMLElement>('.lexieng-word');
     if (target) {
       event.preventDefault();
       void openLookup(target);
@@ -193,7 +236,7 @@ function markTextNode(node: Text, tokens: ClassifiedToken[]): void {
     if (token.start < cursor || token.end > original.length) continue;
     fragment.append(original.slice(cursor, token.start));
     const marker = document.createElement('span');
-    marker.className = 'lexijap-word';
+    marker.className = `lexieng-word lexieng-${token.state}`;
     marker.dataset.word = token.surface;
     marker.dataset.normalized = token.matched || token.normalized;
     marker.dataset.frequency = token.frequencyRank?.toString() ?? '';
@@ -204,7 +247,7 @@ function markTextNode(node: Text, tokens: ClassifiedToken[]): void {
       `${token.surface}, ${token.frequencyRank === undefined ? 'unranked' : `frequency rank ${Math.round(token.frequencyRank)}`}`,
     );
     marker.title = token.hasDefinition
-      ? 'Click, or hold Shift while hovering, to open LexiJap'
+      ? 'Press Q, click, or hold Shift while hovering to open LexiEng'
       : 'No imported definition; click to inspect';
     marker.textContent = original.slice(token.start, token.end);
     fragment.append(marker);
@@ -217,7 +260,7 @@ function markTextNode(node: Text, tokens: ClassifiedToken[]): void {
 function clearMarks(): void {
   closePopup();
   const parents = new Set<Node>();
-  for (const marker of document.querySelectorAll('.lexijap-word')) {
+  for (const marker of document.querySelectorAll('.lexieng-word')) {
     const parent = marker.parentNode;
     if (!parent) continue;
     parents.add(parent);
@@ -230,13 +273,17 @@ function clearMarks(): void {
 async function openLookup(target: HTMLElement): Promise<void> {
   const word = target.dataset.word ?? target.textContent ?? '';
   if (!word) return;
+  return openLookupWord(word, target);
+}
+
+async function openLookupWord(word: string, anchor: PopupAnchor): Promise<void> {
   activeWord = word;
   const host = ensurePopupHost();
   const root = host.shadowRoot;
-  const results = root?.querySelector<HTMLElement>('.lexijap-popup-results');
+  const results = root?.querySelector<HTMLElement>('.lexieng-popup-results');
   if (!results) return;
-  results.replaceChildren(textNode('div', 'Looking up…', 'lexijap-popup-loading'));
-  positionPopup(host, target);
+  results.replaceChildren(textNode('div', 'Looking up…', 'lexieng-popup-loading'));
+  positionPopup(host, anchor);
   await chrome.runtime.sendMessage({ type: 'wordSelected', word } satisfies RuntimeRequest).catch(() => undefined);
 
   try {
@@ -245,18 +292,19 @@ async function openLookup(target: HTMLElement): Promise<void> {
     renderLookupResult(
       results,
       result,
-      (query) => void lookupInsidePopup(query, target),
-      (known) => void updateKnown(word, known, target),
+      (query) => void lookupInsidePopup(query, anchor),
+      (known) => void updateKnown(word, known, anchor),
+      (cardId, ease) => reviewCard(cardId, ease, word, anchor),
     );
-    positionPopup(host, target);
+    positionPopup(host, anchor);
   } catch (error) {
     results.replaceChildren(textNode('div', errorMessage(error), 'lookup-error'));
   }
 }
 
-async function lookupInsidePopup(query: string, anchor: HTMLElement): Promise<void> {
+async function lookupInsidePopup(query: string, anchor: PopupAnchor): Promise<void> {
   activeWord = query;
-  const results = popupHost?.shadowRoot?.querySelector<HTMLElement>('.lexijap-popup-results');
+  const results = popupHost?.shadowRoot?.querySelector<HTMLElement>('.lexieng-popup-results');
   if (!results) return;
   const result = await sendMessage<LookupResult>({ type: 'lookup', query });
   renderLookupResult(
@@ -264,20 +312,31 @@ async function lookupInsidePopup(query: string, anchor: HTMLElement): Promise<vo
     result,
     (nested) => void lookupInsidePopup(nested, anchor),
     (known) => void updateKnown(query, known, anchor),
+    (cardId, ease) => reviewCard(cardId, ease, query, anchor),
   );
   if (popupHost) positionPopup(popupHost, anchor);
 }
 
-async function updateKnown(term: string, known: boolean, anchor: HTMLElement): Promise<void> {
+async function updateKnown(term: string, known: boolean, anchor: PopupAnchor): Promise<void> {
   await sendMessage({ type: 'setKnown', term, known });
+  await lookupInsidePopup(term, anchor);
+}
+
+async function reviewCard(
+  cardId: number,
+  ease: AnkiEase,
+  term: string,
+  anchor: PopupAnchor,
+): Promise<void> {
+  await sendMessage({ type: 'reviewAnkiCard', cardId, ease });
   await lookupInsidePopup(term, anchor);
 }
 
 function ensurePopupHost(): HTMLElement {
   if (popupHost?.isConnected) return popupHost;
   popupHost = document.createElement('aside');
-  popupHost.id = 'lexijap-popup-host';
-  popupHost.dataset.lexijapIgnore = 'true';
+  popupHost.id = 'lexieng-popup-host';
+  popupHost.dataset.lexiengIgnore = 'true';
   const root = popupHost.attachShadow({ mode: 'open' });
   const base = document.createElement('link');
   base.rel = 'stylesheet';
@@ -288,34 +347,34 @@ function ensurePopupHost(): HTMLElement {
   const style = document.createElement('style');
   style.textContent = `
     :host { all: initial; }
-    .lexijap-popup-shell {
+    .lexieng-popup-shell {
       position: relative; max-height: min(520px, calc(100vh - 20px)); overflow: auto;
       padding: 18px; border: 1px solid var(--border); border-radius: 10px;
       color: var(--text); background: var(--surface); box-shadow: var(--shadow);
       font: 14px/1.55 "Inter", "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
     }
-    .lexijap-popup-close { position: sticky; z-index: 2; top: 0; float: right; width: 30px; min-height: 30px; padding: 0; }
-    .lexijap-popup-results { clear: both; }
-    .lexijap-popup-loading { padding: 22px; color: var(--muted); text-align: center; }
+    .lexieng-popup-close { position: sticky; z-index: 2; top: 0; float: right; width: 30px; min-height: 30px; padding: 0; }
+    .lexieng-popup-results { clear: both; }
+    .lexieng-popup-loading { padding: 22px; color: var(--muted); text-align: center; }
   `;
   const shell = document.createElement('div');
-  shell.className = 'lexijap-popup-shell';
+  shell.className = 'lexieng-popup-shell';
   shell.dataset.theme = activeTheme;
   const close = document.createElement('button');
   close.type = 'button';
-  close.className = 'icon-button lexijap-popup-close';
-  close.setAttribute('aria-label', 'Close LexiJap popup');
+  close.className = 'icon-button lexieng-popup-close';
+  close.setAttribute('aria-label', 'Close LexiEng popup');
   close.textContent = '×';
   close.addEventListener('click', closePopup);
   const results = document.createElement('div');
-  results.className = 'lexijap-popup-results lookup-results';
+  results.className = 'lexieng-popup-results lookup-results';
   shell.append(close, results);
   root.append(base, resultsStyle, style, shell);
   document.documentElement.append(popupHost);
   return popupHost;
 }
 
-function positionPopup(host: HTMLElement, target: HTMLElement): void {
+function positionPopup(host: HTMLElement, target: PopupAnchor): void {
   const anchor = target.getBoundingClientRect();
   const width = Math.min(410, window.innerWidth - 20);
   host.style.width = `${width}px`;
@@ -327,6 +386,54 @@ function positionPopup(host: HTMLElement, target: HTMLElement): void {
     : Math.max(10, anchor.top - measuredHeight - 6);
   host.style.left = `${left}px`;
   host.style.top = `${top}px`;
+}
+
+function isTypingContext(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]'));
+}
+
+function lookupAtPointerOrSelection(): { word: string; anchor: PopupAnchor } | undefined {
+  const selection = window.getSelection();
+  const selected = selection?.toString().trim() ?? '';
+  if (selected && selected.length <= 100 && selection?.rangeCount) {
+    return { word: selected, anchor: selection.getRangeAt(0).cloneRange() };
+  }
+  if (!lastPointer) return undefined;
+  return wordAtPoint(lastPointer.x, lastPointer.y);
+}
+
+function wordAtPoint(x: number, y: number): { word: string; anchor: PopupAnchor } | undefined {
+  let node: Node | null = null;
+  let offset = 0;
+  const documentWithCaret = document as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+  };
+  const position = documentWithCaret.caretPositionFromPoint?.(x, y);
+  if (position) {
+    node = position.offsetNode;
+    offset = position.offset;
+  } else {
+    const pointRange = documentWithCaret.caretRangeFromPoint?.(x, y);
+    if (pointRange) {
+      node = pointRange.startContainer;
+      offset = pointRange.startOffset;
+    }
+  }
+  if (!(node instanceof Text) || node.parentElement?.closest(EXCLUDED_SELECTOR)) return undefined;
+
+  const matcher = /[\p{L}\p{M}\p{N}]+(?:['’\-][\p{L}\p{M}\p{N}]+)*/gu;
+  for (const match of node.data.matchAll(matcher)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (offset < start || offset > end) continue;
+    const range = document.createRange();
+    range.setStart(node, start);
+    range.setEnd(node, end);
+    return { word: match[0], anchor: range };
+  }
+  return undefined;
 }
 
 function closePopup(): void {

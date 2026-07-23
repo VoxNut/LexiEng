@@ -171,6 +171,121 @@ main {
   font-size: 10px;
 }
 
+.anki-review-panel {
+  margin: 12px 0 2px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.anki-review-title,
+.anki-review-missing {
+  display: grid;
+  gap: 2px;
+}
+
+.anki-review-title {
+  margin-bottom: 9px;
+}
+
+.anki-review-title strong,
+.anki-review-missing strong {
+  font-size: 12px;
+}
+
+.anki-review-title span,
+.anki-review-missing span,
+.anki-card-metrics,
+.anki-review-status {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.anki-card + .anki-card {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.anki-card-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+}
+
+.anki-state {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--surface-2);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.anki-state-due,
+.anki-state-new,
+.anki-state-learning {
+  border-color: color-mix(in srgb, var(--target) 45%, var(--border));
+  color: var(--target);
+  background: var(--target-soft);
+}
+
+.anki-grade-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.anki-grade {
+  display: grid;
+  min-width: 0;
+  min-height: 42px;
+  align-content: center;
+  gap: 1px;
+  padding: 5px 3px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: center;
+}
+
+.anki-grade:hover,
+.anki-grade:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.anki-grade-1:hover,
+.anki-grade-1:focus-visible {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.anki-grade strong {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.anki-grade span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 8px;
+  text-overflow: ellipsis;
+}
+
+.anki-review-status {
+  min-height: 15px;
+  padding-top: 4px;
+}
+
 .dictionary-result {
   padding: 15px 0;
   border-bottom: 1px solid var(--border);

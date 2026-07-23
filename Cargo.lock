@@ -104,8 +104,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "lexijap-core"
-version = "0.1.0"
+name = "lexieng-core"
+version = "0.2.0"
 dependencies = [
  "js-sys",
  "pretty_assertions",

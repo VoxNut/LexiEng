@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LexiJap Reader</title>
+    <title>LexiEng Reader</title>
     <link rel="stylesheet" href="../styles/base.css" />
     <link rel="stylesheet" href="../styles/sidepanel.css" />
   </head>
@@ -11,7 +11,7 @@
     <header class="panel-header">
       <div class="brand-mark" aria-hidden="true">Lx</div>
       <div>
-        <h1>LexiJap</h1>
+        <h1>LexiEng</h1>
         <p>English reading companion</p>
       </div>
       <button id="open-options" class="icon-button" type="button" aria-label="Open settings" title="Settings">⚙</button>
@@ -35,7 +35,7 @@
           <button id="scan-page" class="primary-button" type="button">Scan page</button>
           <button id="clear-page" class="secondary-button" type="button">Clear marks</button>
         </div>
-        <p class="hint">Shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></p>
+        <p class="hint"><kbd>Q</kbd> opens the word under the pointer · <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> scans targets</p>
       </section>
 
       <section class="lookup-section" aria-labelledby="lookup-heading">
@@ -52,7 +52,7 @@
         </form>
         <div id="lookup-empty" class="empty-state">
           <strong>Your dictionaries stay on this device.</strong>
-          <span>Scan a page, select a highlighted word, or search here.</span>
+          <span>Point at any page word and press Q, scan targets, or search here.</span>
         </div>
         <div id="lookup-results" class="lookup-results" hidden aria-live="polite"></div>
       </section>

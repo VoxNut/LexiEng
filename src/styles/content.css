@@ -1,11 +1,9 @@
-.lexijap-word {
+.lexieng-word {
   margin: 0 !important;
-  padding: 0 1px !important;
+  padding: 0 !important;
   border: 0 !important;
-  border-bottom: 2px solid #b96325 !important;
-  border-radius: 2px !important;
   color: inherit !important;
-  background: color-mix(in srgb, #f3b77f 24%, transparent) !important;
+  background: transparent !important;
   font: inherit !important;
   line-height: inherit !important;
   text-decoration: none !important;
@@ -14,17 +12,31 @@
   cursor: help !important;
 }
 
-.lexijap-word:hover,
-.lexijap-word:focus-visible {
+.lexieng-word.lexieng-target {
+  padding: 0 1px !important;
+  border-bottom: 2px solid #b96325 !important;
+  border-radius: 2px !important;
+  background: color-mix(in srgb, #f3b77f 24%, transparent) !important;
+}
+
+.lexieng-word.lexieng-target:hover,
+.lexieng-word.lexieng-target:focus-visible {
   background: color-mix(in srgb, #f3b77f 42%, transparent) !important;
   outline: 2px solid color-mix(in srgb, #b96325 45%, transparent) !important;
   outline-offset: 1px !important;
 }
 
-#lexijap-popup-host {
+.lexieng-word:not(.lexieng-target):hover,
+.lexieng-word:not(.lexieng-target):focus-visible {
+  text-decoration: underline dotted currentColor !important;
+  text-underline-offset: 3px !important;
+}
+
+#lexieng-popup-host {
   position: fixed !important;
   z-index: 2147483647 !important;
-  inset: auto !important;
+  right: auto !important;
+  bottom: auto !important;
   display: block !important;
   width: min(410px, calc(100vw - 20px)) !important;
   max-height: min(520px, calc(100vh - 20px)) !important;

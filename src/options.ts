@@ -1,4 +1,4 @@
-import { inspectAnki, loadAnkiKnownWords } from './shared/anki';
+import { inspectAnki, loadAnkiSnapshot } from './shared/anki';
 import {
   addImportBatch,
   deleteDictionary,
@@ -6,7 +6,7 @@ import {
   listDictionaries,
   putDictionary,
   removeDictionaryWithSameIdentity,
-  replaceAnkiKnownWords,
+  replaceAnkiSnapshot,
   updateDictionary,
 } from './shared/db';
 import { applyTheme, getSettings, saveSettings } from './shared/settings';
@@ -334,17 +334,17 @@ async function syncAnki(): Promise<void> {
   setAnkiStatus('Reading English Mining…', 'working');
   try {
     const settings = await saveAnkiSettings();
-    const words = await loadAnkiKnownWords(
+    const snapshot = await loadAnkiSnapshot(
       settings.ankiUrl,
       settings.ankiDeck,
       settings.ankiField,
       (completed, total) => {
-        setAnkiStatus(`Reading notes ${formatNumber(completed)} / ${formatNumber(total)}…`, 'working');
+        setAnkiStatus(`Reading cards ${formatNumber(completed)} / ${formatNumber(total)}…`, 'working');
       },
     );
-    const count = await replaceAnkiKnownWords(words);
+    const count = await replaceAnkiSnapshot(snapshot.words, snapshot.cards);
     setAnkiStatus(
-      `Synced ${formatNumber(count)} unique known terms from “${settings.ankiDeck}”.`,
+      `Synced ${formatNumber(count)} terms and ${formatNumber(snapshot.cards.length)} card schedules from “${settings.ankiDeck}”.`,
       'success',
     );
     await refreshSummary();

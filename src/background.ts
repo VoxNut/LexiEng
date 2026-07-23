@@ -1,8 +1,9 @@
 import init, {
   lookup_candidates as lookupCandidates,
   tokenize_nodes as tokenizeNodes,
-} from '../.generated/wasm/lexijap_core.js';
-import { classifyTokens, lookupTerm, setManualKnown } from './shared/db';
+} from '../.generated/wasm/lexieng_core.js';
+import { reviewAnkiCard } from './shared/anki';
+import { classifyTokens, lookupTerm, setManualKnown, updateAnkiCard } from './shared/db';
 import { getSettings } from './shared/settings';
 import { RuntimeRequest } from './shared/types';
 
@@ -11,13 +12,13 @@ let wasmReady: Promise<WebAssembly.Exports> | undefined;
 chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: 'lexijap-scan', title: 'LexiJap: scan page', contexts: ['page'] });
+    chrome.contextMenus.create({ id: 'lexieng-scan', title: 'LexiEng: scan page', contexts: ['page'] });
     chrome.contextMenus.create({
-      id: 'lexijap-lookup',
-      title: 'LexiJap: look up “%s”',
+      id: 'lexieng-lookup',
+      title: 'LexiEng: look up “%s”',
       contexts: ['selection'],
     });
-    chrome.contextMenus.create({ id: 'lexijap-clear', title: 'LexiJap: clear marks', contexts: ['page'] });
+    chrome.contextMenus.create({ id: 'lexieng-clear', title: 'LexiEng: clear marks', contexts: ['page'] });
   });
   if (details.reason === 'install') void chrome.runtime.openOptionsPage();
 });
@@ -28,9 +29,9 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (!tab?.id) return;
-  if (info.menuItemId === 'lexijap-scan') void sendTabMessage(tab.id, { type: 'scanPage' });
-  if (info.menuItemId === 'lexijap-clear') void sendTabMessage(tab.id, { type: 'clearPage' });
-  if (info.menuItemId === 'lexijap-lookup' && info.selectionText) {
+  if (info.menuItemId === 'lexieng-scan') void sendTabMessage(tab.id, { type: 'scanPage' });
+  if (info.menuItemId === 'lexieng-clear') void sendTabMessage(tab.id, { type: 'clearPage' });
+  if (info.menuItemId === 'lexieng-lookup' && info.selectionText) {
     if (tab.windowId !== undefined) void chrome.sidePanel.open({ windowId: tab.windowId });
     void chrome.runtime.sendMessage({ type: 'wordSelected', word: info.selectionText.trim() });
   }
@@ -68,6 +69,11 @@ async function handleMessage(message: RuntimeRequest): Promise<unknown> {
     case 'setKnown':
       await setManualKnown(message.term, message.known);
       return { ok: true };
+    case 'reviewAnkiCard': {
+      const settings = await getSettings();
+      const snapshot = await reviewAnkiCard(settings.ankiUrl, message.cardId, message.ease);
+      return updateAnkiCard(snapshot);
+    }
     case 'scanActivePage':
       return withActiveTab((tabId) => sendTabMessage(tabId, { type: 'scanPage' }));
     case 'clearActivePage':
@@ -81,7 +87,7 @@ async function handleMessage(message: RuntimeRequest): Promise<unknown> {
 }
 
 function ensureWasm(): Promise<WebAssembly.Exports> {
-  wasmReady ??= init({ module_or_path: chrome.runtime.getURL('wasm/lexijap_core_bg.wasm') });
+  wasmReady ??= init({ module_or_path: chrome.runtime.getURL('wasm/lexieng_core_bg.wasm') });
   return wasmReady;
 }
 

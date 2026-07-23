@@ -598,10 +598,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "set LEXIJAP_DICTIONARY_DIR to validate external dictionary archives"]
+    #[ignore = "set LEXIENG_DICTIONARY_DIR to validate external dictionary archives"]
     fn validates_external_archive_directory() {
-        let directory = std::env::var("LEXIJAP_DICTIONARY_DIR")
-            .expect("LEXIJAP_DICTIONARY_DIR must point to a folder of Yomitan ZIP files");
+        let directory = std::env::var("LEXIENG_DICTIONARY_DIR")
+            .expect("LEXIENG_DICTIONARY_DIR must point to a folder of Yomitan ZIP files");
         let mut paths = std::fs::read_dir(directory)
             .unwrap()
             .filter_map(Result::ok)

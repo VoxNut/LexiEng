@@ -1,4 +1,4 @@
-import { LookupResult } from './types';
+import { AnkiCardSnapshot, AnkiEase, LookupResult } from './types';
 import { formatNumber, isRecord } from './util';
 
 const ALLOWED_TAGS = new Set([
@@ -63,6 +63,7 @@ export function renderLookupResult(
   result: LookupResult,
   onLookup: (term: string) => void,
   onKnownChange: (known: boolean) => void,
+  onAnkiReview?: (cardId: number, ease: AnkiEase) => Promise<void>,
 ): void {
   container.replaceChildren();
 
@@ -109,6 +110,8 @@ export function renderLookupResult(
   header.append(knownLine);
   container.append(header);
 
+  renderAnkiCards(container, result, onAnkiReview);
+
   if (result.entries.length === 0) {
     const empty = element('div', 'empty-state');
     empty.append(
@@ -141,6 +144,96 @@ export function renderLookupResult(
       section.append(definition);
     }
     container.append(section);
+  }
+}
+
+function renderAnkiCards(
+  container: HTMLElement,
+  result: LookupResult,
+  onReview?: (cardId: number, ease: AnkiEase) => Promise<void>,
+): void {
+  if (result.ankiCards.length === 0) {
+    if (!result.knownSources.includes('anki')) return;
+    const missing = element('section', 'anki-review-panel anki-review-missing');
+    missing.append(
+      textElement('strong', 'Anki schedule not loaded'),
+      textElement('span', 'Sync the deck again in LexiEng settings to add FSRS state and review buttons.'),
+    );
+    container.append(missing);
+    return;
+  }
+
+  const panel = element('section', 'anki-review-panel');
+  const title = element('div', 'anki-review-title');
+  title.append(
+    textElement('strong', 'Anki / FSRS'),
+    textElement('span', 'Intervals come from Anki’s active scheduler.'),
+  );
+  panel.append(title);
+
+  for (const card of result.ankiCards) panel.append(renderAnkiCard(card, onReview));
+  container.append(panel);
+}
+
+function renderAnkiCard(
+  card: AnkiCardSnapshot,
+  onReview?: (cardId: number, ease: AnkiEase) => Promise<void>,
+): HTMLElement {
+  const cardNode = element('article', 'anki-card');
+  const summary = element('div', 'anki-card-summary');
+  const state = element('span', `anki-state anki-state-${card.state}`);
+  state.textContent = cardStateLabel(card.state);
+  const metrics = element('span', 'anki-card-metrics');
+  const interval = card.intervalDays > 0 ? `${formatNumber(card.intervalDays)}d interval` : 'No interval';
+  metrics.textContent = `${interval} · ${formatNumber(card.reps)} reviews · ${formatNumber(card.lapses)} lapses`;
+  summary.append(state, metrics);
+  cardNode.append(summary);
+
+  if (!onReview || card.state === 'suspended' || card.state === 'buried') return cardNode;
+
+  const actions = element('div', 'anki-grade-actions');
+  const status = element('div', 'anki-review-status');
+  const grades: Array<{ ease: AnkiEase; label: string }> = [
+    { ease: 1, label: 'Again' },
+    { ease: 2, label: 'Hard' },
+    { ease: 3, label: 'Good' },
+    { ease: 4, label: 'Easy' },
+  ];
+  const buttons: HTMLButtonElement[] = [];
+
+  for (const { ease, label } of grades) {
+    const button = element('button', `anki-grade anki-grade-${ease}`);
+    button.type = 'button';
+    button.append(textElement('strong', label));
+    const nextReview = card.nextReviews[ease - 1];
+    if (nextReview) button.append(textElement('span', nextReview));
+    button.addEventListener('click', () => {
+      for (const item of buttons) item.disabled = true;
+      status.textContent = `Saving ${label.toLowerCase()} to Anki…`;
+      void onReview(card.cardId, ease)
+        .then(() => {
+          if (status.isConnected) status.textContent = 'Reviewed in Anki.';
+        })
+        .catch((error: unknown) => {
+          status.textContent = error instanceof Error ? error.message : String(error);
+          for (const item of buttons) item.disabled = false;
+        });
+    });
+    buttons.push(button);
+    actions.append(button);
+  }
+  cardNode.append(actions, status);
+  return cardNode;
+}
+
+function cardStateLabel(state: AnkiCardSnapshot['state']): string {
+  switch (state) {
+    case 'new': return 'New';
+    case 'learning': return 'Learning';
+    case 'due': return 'Due now';
+    case 'review': return 'Not due';
+    case 'suspended': return 'Suspended';
+    case 'buried': return 'Buried';
   }
 }
 
